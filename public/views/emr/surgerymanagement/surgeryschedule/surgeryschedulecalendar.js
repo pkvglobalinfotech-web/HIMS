@@ -84,6 +84,7 @@
                 };
             });
             console.log('Calendar Events:', $scope.calendarEvents);
+            $scope.refreshReactProps();
         };
         function combineDateTime(dateStr, timeStr) {
             if (!dateStr || !timeStr) return null;
@@ -162,24 +163,33 @@
             } else {
                 $scope.currentfilter.DoctorId = [];
             }
+            $scope.refreshReactProps();
             $scope.getList();
         }
         $timeout(function () {
-            $("#datepicker").datepicker({
-                onSelect: function (dateText) {
-                    var selectedDate = new Date(dateText);
-                    $('#calendar').fullCalendar('gotoDate', selectedDate);
-                },
-                numberOfMonths: 1,
-                showButtonPanel: true
-            });
+            if (window.$ && $.fn && typeof $.fn.datepicker === 'function' && $("#datepicker").length) {
+                $("#datepicker").datepicker({
+                    onSelect: function (dateText) {
+                        var selectedDate = new Date(dateText);
+                        if ($.fn && typeof $.fn.fullCalendar === 'function' && $('#calendar').length) {
+                            $('#calendar').fullCalendar('gotoDate', selectedDate);
+                        }
+                    },
+                    numberOfMonths: 1,
+                    showButtonPanel: true
+                });
 
-            $(document).on('click', '.ui-datepicker-current', function () {
-                var today = new Date();
-                $('#datepicker').datepicker('setDate', today);
-                $('#calendar').fullCalendar('gotoDate', today);
-            });
-        }, 0);
+                $(document).on('click', '.ui-datepicker-current', function () {
+                    var today = new Date();
+                    if ($.fn && typeof $.fn.datepicker === 'function' && $('#datepicker').length) {
+                        $('#datepicker').datepicker('setDate', today);
+                    }
+                    if ($.fn && typeof $.fn.fullCalendar === 'function' && $('#calendar').length) {
+                        $('#calendar').fullCalendar('gotoDate', today);
+                    }
+                });
+            }
+        }, 50);
 
         $scope.initLookup = function () {
             var inputData = [
@@ -224,24 +234,37 @@
         }
         $scope.onCalendarDoubleClick = function (event) {
             if (event.isEmptySlot) {
-                const offsetMs = 5.5 * 60 * 60 * 1000;
+                var OTScheduledOn = '';
+                var StartTime = '08:00';
+                var EndTime = '09:00';
+                function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
-                const startDate = new Date(new Date(event.start).getTime() - offsetMs);
-                const endDate = new Date(new Date(event.end).getTime() - offsetMs);
-                function formatTime(date) {
-                    if (isNaN(date.getTime())) {
-                        return '';
+                if (event.start && typeof event.start.format === 'function') {
+                    OTScheduledOn = event.start.format('YYYY-MM-DD');
+                    StartTime = event.start.format('HH:mm');
+                    EndTime = (event.end && typeof event.end.format === 'function') ? event.end.format('HH:mm') : '';
+                } else if (event.start) {
+                    var sDate = new Date(event.start);
+                    OTScheduledOn = sDate.getFullYear() + '-' + pad(sDate.getMonth() + 1) + '-' + pad(sDate.getDate());
+                    StartTime = pad(sDate.getHours()) + ':' + pad(sDate.getMinutes());
+                    if (event.end) {
+                        var eDate = new Date(event.end);
+                        EndTime = pad(eDate.getHours()) + ':' + pad(eDate.getMinutes());
+                    } else {
+                        EndTime = pad((sDate.getHours() + 1) % 24) + ':' + pad(sDate.getMinutes());
                     }
-                    return pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':00';
+                } else {
+                    var today = new Date();
+                    OTScheduledOn = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
                 }
-                function pad(n) {
-                    return n < 10 ? '0' + n : n;
-                }
-                var OTScheduledOn = startDate.getFullYear() + '-' + pad(startDate.getMonth() + 1) + '-' + pad(startDate.getDate());
 
-                var StartTime = pad(startDate.getHours()) + ':' + pad(startDate.getMinutes()) + ':00';
-                // var EndTime = pad(endDate.getHours()) + ':' + pad(endDate.getMinutes()) + ':00';
-                var EndTime = formatTime(endDate);
+                // Check if selected slot is in the past
+                var now = new Date();
+                var slotDate = new Date(OTScheduledOn + 'T' + (StartTime || '00:00') + ':00');
+                if (slotDate < now) {
+                    utl.Alert.showErrorMsg('Cannot schedule surgery in past date and time.');
+                    return;
+                }
 
                 event.OTScheduledOn = OTScheduledOn;
                 event.StartTime = StartTime;
@@ -249,7 +272,7 @@
                 console.log("Selected from:", event.OTScheduledOn, event.StartTime, "to:", event.EndTime);
                 $scope.addNew(event);
             } else {
-                console.log("Double-clicked event:", event);
+                console.log("Clicked event:", event);
                 $scope.editOld(event);
             }
         };
@@ -277,110 +300,147 @@
         }
         $scope.editOld = function (event) {
             $scope.openModals(event);
-        }
+        };
+
+        $scope.reactProps = {
+            calendarEvents: [],
+            lookup: {},
+            currentfilter: $scope.currentfilter
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                calendarEvents: $scope.calendarEvents || [],
+                lookup: $scope.lookup || {},
+                currentfilter: angular.copy($scope.currentfilter)
+            };
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'filterByDoctor') {
+                $scope.currentfilter.DoctorId = payload === -1 ? [] : [payload];
+                $scope.getList();
+            } else if (actionName === 'toggleRoom') {
+                $scope.toggleRoomSelection(payload);
+            } else if (actionName === 'filterByStatus') {
+                $scope.filterByStatus(payload);
+            } else if (actionName === 'addEvent') {
+                $scope.addNew(payload);
+            } else if (actionName === 'editEvent') {
+                $scope.editOld(payload);
+            } else if (actionName === 'openConfirmation') {
+                $scope.openModals(payload);
+            } else if (actionName === 'refresh') {
+                $scope.getList();
+            }
+        };
+
         $scope.initLookup();
     }
 
     surgeryschedulecalendarController.$inject = ['$rootScope', '$scope', '$stateParams', '$state', '$translate', 'utl', '$timeout', '$filter'];
-    function calendarDirective() {
+    calendarDirective.$inject = ['$timeout'];
+    function calendarDirective($timeout) {
         return {
             restrict: 'A',
             link: function (scope, element, attrs) {
                 let lastDayClickTime = 0;
                 let lastDayClickDate = null;
-                let lastClickTime = 0;
+
+                function updateEvents(events) {
+                    if (window.$ && $.fn && typeof $.fn.fullCalendar === 'function' && $(element).length && $(element).data('fullCalendar')) {
+                        $(element).fullCalendar('removeEvents');
+                        $(element).fullCalendar('addEventSource', events || []);
+                        $(element).fullCalendar('refetchEvents');
+                    }
+                }
+
                 scope.$watch('calendarEvents', function (events) {
-                    $('#calendar').fullCalendar('removeEvents');
-                    $('#calendar').fullCalendar('addEventSource', events || []);
-                    $('#calendar').fullCalendar('refetchEvents');
+                    updateEvents(events);
                 }, true);
 
-                $('#calendar').fullCalendar({
-                    header: {
-                        left: 'prev,next',
-                        center: 'title',
-                        right: 'month,agendaWeek,agendaDay'
-                    },
-                    views: {
-                        month: { buttonText: 'Month' },
-                        agendaWeek: { buttonText: 'Week', allDayText: 'Full day' },
-                        agendaDay: { buttonText: 'Day', allDayText: 'Full day' }
-                    },
-                    defaultView: 'month',
-                    editable: false,
-                    eventLimit: true,
-                    height: 600,
-                    events: scope.calendarEvents,
-                    selectable: true,
-                    selectHelper: true,
-                    select: function (start, end, jsEvent, view) {
-                        if (view.name === 'month') {
-                            $('#calendar').fullCalendar('unselect');
-                            return;
-                        }
-                        const duration = end.diff(start, 'minutes');
-                        if (duration > 30) {
-                            scope.$apply(function () {
-                                scope.onCalendarDoubleClick({
-                                    start: start.toDate(),
-                                    end: end.toDate(),
-                                    isEmptySlot: true
+                $timeout(function () {
+                    if (window.$ && $.fn && typeof $.fn.fullCalendar === 'function' && $(element).length) {
+                        $(element).fullCalendar({
+                            header: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'month,agendaWeek,agendaDay'
+                            },
+                            views: {
+                                month: { buttonText: 'Month' },
+                                agendaWeek: { buttonText: 'Week', allDayText: 'Full day' },
+                                agendaDay: { buttonText: 'Day', allDayText: 'Full day' }
+                            },
+                            defaultView: 'month',
+                            editable: false,
+                            eventLimit: true,
+                            height: 720,
+                            events: scope.calendarEvents || [],
+                            selectable: true,
+                            selectHelper: true,
+                            select: function (start, end, jsEvent, view) {
+                                if (view.name === 'month') {
+                                    $(element).fullCalendar('unselect');
+                                    return;
+                                }
+                                const duration = end.diff(start, 'minutes');
+                                if (duration >= 15) {
+                                    scope.$apply(function () {
+                                        scope.onCalendarDoubleClick({
+                                            start: start,
+                                            end: end,
+                                            isEmptySlot: true
+                                        });
+                                    });
+                                }
+                                $(element).fullCalendar('unselect');
+                            },
+                            eventRender: function (event, el) {
+                                el.on('click', function (e) {
+                                    scope.$apply(function () {
+                                        scope.onCalendarDoubleClick(event);
+                                    });
                                 });
-                            });
-                        }
-                        $('#calendar').fullCalendar('unselect');
-                    },
-                    eventRender: function (event, element) {
-                        element.on('click', function (e) {
-                            const now = new Date().getTime();
-                            if (now - lastClickTime < 300) {
-                                scope.$apply(function () {
-                                    scope.onCalendarDoubleClick(event);
+                            },
+                            dayClick: function (date, jsEvent, view) {
+                                const now = new Date().getTime();
+                                if (lastDayClickDate && date.isSame(lastDayClickDate) && (now - lastDayClickTime) < 300) {
+                                    scope.$apply(function () {
+                                        scope.onCalendarDoubleClick({
+                                            start: date,
+                                            isEmptySlot: true
+                                        });
+                                    });
+                                }
+                                lastDayClickTime = now;
+                                lastDayClickDate = date;
+                            },
+                            eventMouseover: function (event, jsEvent) {
+                                var tooltipContent =
+                                    '<strong>Patient:</strong> ' + (event.PatientName || '-') + '<br>' +
+                                    '<strong>Doctor:</strong> ' + (event.DoctorName || '-') + '<br>' +
+                                    '<strong>OT Room:</strong> ' + (event.OTRoom || '-') + '<br>' +
+                                    '<strong>Procedure:</strong> ' + (event.Procedure || '-') + '<br>' +
+                                    '<strong>Status:</strong> ' + (event.status || '-');
+
+                                var $tooltip = $('<div class="fc-tooltip">' + tooltipContent + '</div>')
+                                    .appendTo('body');
+
+                                $(this).on('mousemove.tooltip', function (e) {
+                                    $tooltip.css({
+                                        top: e.pageY + 12,
+                                        left: e.pageX + 12
+                                    });
                                 });
+                            },
+                            eventMouseout: function (event, jsEvent) {
+                                $('.fc-tooltip').remove();
+                                $(this).off('mousemove.tooltip');
                             }
-                            lastClickTime = now;
                         });
-                    },
-                    dayClick: function (date, jsEvent, view) {
-                        const now = new Date().getTime();
-                        if (lastDayClickDate && date.isSame(lastDayClickDate) && (now - lastDayClickTime) < 300) {
-                            scope.$apply(function () {
-                                scope.onCalendarDoubleClick({
-                                    start: date.toDate(),
-                                    isEmptySlot: true // flag to differentiate empty slot clicks
-                                });
-                            });
-                        }
-                        lastDayClickTime = now;
-                        lastDayClickDate = date;
-                    },
-                    eventMouseover: function (event, jsEvent) {
-                        var tooltipContent =
-                            '<strong>Patient:</strong> ' + (event.PatientName || '-') + '<br>' +
-                            '<strong>Doctor:</strong> ' + (event.DoctorName || '-') + '<br>' +
-                            '<strong>OT Room:</strong> ' + (event.OTRoom || '-') + '<br>' +
-                            '<strong>Procedure:</strong> ' + (event.Procedure || '-') + '<br>' +
-                            '<strong>Status:</strong> ' + (event.status || '-');
-
-                        var $tooltip = $('<div class="fc-tooltip tooltip fade in" style="position:absolute; z-index:10001; background:#dde2f0; color:#4f576b; padding:8px; border-radius:4px;">' + tooltipContent + '</div>')
-                            .appendTo('body');
-
-                        $(this).on('mousemove.tooltip', function (e) {
-                            $tooltip.css({
-                                top: e.pageY + 10,
-                                left: e.pageX + 10
-                            });
-                        });
-                    },
-
-                    eventMouseout: function (event, jsEvent) {
-                        $('.fc-tooltip').remove();
-                        $(this).off('mousemove.tooltip');
                     }
-                    // eventClick: function (event) {
-                    //     alert('Event: ' + event.title);
-                    // }
-                });
+                }, 50);
             }
         };
     }

@@ -191,15 +191,19 @@
         //     }
         // };
 
+        $scope.openUserMappingTemplate = $scope.openUserMappingTemplate || function () {};
+
         //getList
         $scope.getListCallback = function (scope, res, options, hasError) {
             vm.gridConfig.data = res.Data;
+            vm.gridConfig.pagerObj.totalItems = res.PageContext ? res.PageContext.TotalRecords : (res.Data ? res.Data.length : 0);
             $scope.refreshReactProps();
-            vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
             var consultationList = res.Data;
             console.log(consultationList);
             if (res && res.Data && res.Data.length == 0) {
-                $scope.openUserMappingTemplate();
+                if (typeof $scope.openUserMappingTemplate === 'function') {
+                    $scope.openUserMappingTemplate();
+                }
             }
         };
 
@@ -428,56 +432,46 @@
             if (actionType == 'rowAction') { $scope.handleEvents(payload.key, entity); }
         };
 
+        $scope.handleReactAction = function (actionType, payload) {
+            if (actionType === 'rowAction') {
+                var items = vm.gridConfig.data || [];
+                var entity = payload.entity;
+                if (!entity && payload.id) {
+                    for (var i = 0; i < items.length; i++) {
+                        if (items[i].Id === payload.id) { entity = items[i]; break; }
+                    }
+                }
+                $scope.handleEvents(payload.key, entity);
+            } else if (actionType === 'filterChange') {
+                if (payload.PatientMRN !== undefined) $scope.currentfilter.PatientMRN = payload.PatientMRN;
+                if (payload.IPNumber !== undefined) $scope.currentfilter.IPNumber = payload.IPNumber;
+                if (payload.fromdate !== undefined) $scope.currentfilter.fromdate = payload.fromdate;
+                if (payload.todate !== undefined) $scope.currentfilter.todate = payload.todate;
+                if (payload.DoctorId !== undefined) $scope.currentfilter.DoctorId = payload.DoctorId;
+                if (payload.ProgressNoteStatusId !== undefined) $scope.currentfilter.ProgressNoteStatusId = payload.ProgressNoteStatusId;
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            } else if (actionType === 'pageChange') {
+                vm.gridConfig.pagerObj.currentPage = payload.page;
+                $scope.getList();
+            } else if (actionType === 'pageSizeChange') {
+                vm.gridConfig.pagerObj.pageSize = payload.pageSize;
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            }
+        };
+
         $scope.refreshReactProps = function () {
-            var defs = vm.gridConfig.columnDefs || [];
-            function hdr(i) { return defs[i] ? defs[i].displayName : ''; }
-            function dt(v, f) { return v ? $filter('date')(v, f) : ''; }
             var items = vm.gridConfig.data || [];
-            $scope.reactPropsGridContainer = {
-                reactProps: {
-                    columns: [
-                        { key: '__sno', header: hdr(0), width: '60px' },
-                        { key: 'date', header: hdr(1) },
-                        { key: 'patientname', header: hdr(2) },
-                        { key: 'mrn', header: hdr(3), sortable: true },
-                        { key: 'ipno', header: hdr(4), sortable: true },
-                        { key: 'doa', header: hdr(5) },
-                        { key: 'dod', header: hdr(6) },
-                        { key: 'dischargetype', header: hdr(7), sortable: true },
-                        { key: 'doctor', header: hdr(8), sortable: true },
-                        { key: 'notesname', header: hdr(9), sortable: true },
-                        { key: 'status', header: hdr(10), sortable: true }
-                    ],
-                    actionsHeader: hdr(11) || 'Actions',
-                    hasActions: true,
-                    rows: items.map(function (entity) {
-                        var p = entity.Patient || {};
-                        return {
-                            id: entity.Id,
-                            actions: [
-                                { key: 'reviewnote', label: '', icon: 'fas fa-file-medical', variant: 'icon', title: 'Summary Notes' },
-                                { key: 'print', label: '', icon: 'fa fa-print', variant: 'icon', title: 'Print' }
-                            ],
-                            cells: {
-                                date: dt(entity.CreatedAt, 'dd-MMM-yyyy') + ' ' + dt(entity.CreatedAt, 'HH:mm'),
-                                //PRE-EXISTING QUIRK: this cell reads Patient.firstname /
-                                //Patient.lastname (lowercase), which do not match the
-                                //API's FirstName/LastName casing, so the name renders as
-                                //just the title today. Reproduced exactly.
-                                patientname: ((p.Title && p.Title.Description ? p.Title.Description + ' ' : '') + (p.firstname || '') + ' ' + (p.lastname || '')).replace(/\s+/g, ' ').trim(),
-                                mrn: p.MRN,
-                                ipno: entity.Encounter && entity.Encounter.VisitIdentifier,
-                                doa: dt(entity.AdmissionDate, 'dd-MMM-yyyy') + ' ' + dt(entity.AdmissionDate, 'HH:mm'),
-                                dod: dt(entity.DischargeDate, 'dd-MMM-yyyy') + ' ' + dt(entity.DischargeDate, 'HH:mm'),
-                                dischargetype: entity.DischargeType && entity.DischargeType.Description,
-                                doctor: entity.Doctor,
-                                notesname: entity.ProfileMaster && entity.ProfileMaster.Name,
-                                status: entity.ProgressNoteStatus && entity.ProgressNoteStatus.Description
-                            }
-                        };
-                    })
-                },
-                onAction: $scope.handleGridAction
+            $scope.reactProps = {
+                items: items,
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter,
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
             };
         };
 

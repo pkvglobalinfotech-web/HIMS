@@ -33,12 +33,16 @@
 
          var getEnumObjByText = function(targetType, displayText) {
              var result;
-             if(displayText) {
+             if (displayText && targetType) {
+                var targetLower = ('' + displayText).toLowerCase();
                 for (var idx in targetType) {
-                    var currentValue = targetType[idx].Text;
+                    if (!targetType.hasOwnProperty(idx)) continue;
+                    var item = targetType[idx];
+                    if (!item) continue;
+                    var currentValue = item.Text || item.Name || '';
 
-                    if (currentValue.toLowerCase() == displayText.toLowerCase()) {
-                       result = targetType[idx];
+                    if (currentValue && ('' + currentValue).toLowerCase() === targetLower) {
+                       result = item;
                        break;
                     }
                 }
@@ -48,13 +52,17 @@
 
 
          var getDefaultValue = function(targetType, defaultValue) {
-             if(defaultValue) {
+             if (defaultValue && targetType) {
+                var targetLower = ('' + defaultValue).toLowerCase();
                 for (var idx in targetType) {
-                    var currentId = targetType[idx].Id;
-                    var currentValue = targetType[idx].Text;
+                    if (!targetType.hasOwnProperty(idx)) continue;
+                    var item = targetType[idx];
+                    if (!item) continue;
+                    var currentId = item.Id;
+                    var currentValue = item.Text || item.Name || '';
 
-                    if (currentValue.toLowerCase() == defaultValue.toLowerCase()) {
-                        return targetType[idx].Id;
+                    if (currentValue && ('' + currentValue).toLowerCase() === targetLower) {
+                        return item.Id;
                     }
                 }
              }

@@ -1,0 +1,59 @@
+{
+  "testDate": "2026-10-25T05:20:45.201Z",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Authentication",
+      "status": "PASSED",
+      "durationMs": 95
+    },
+    {
+      "step": 2,
+      "name": "Emergency Lookups Verification",
+      "status": "PASSED",
+      "durationMs": 173,
+      "ward": "EMERGENCY",
+      "room": "EMG01 - GREMG",
+      "bed": "3",
+      "doctor": "ANUP DUKANIYA"
+    },
+    {
+      "step": 3,
+      "name": "Emergency Patient Admission (AddDayCarePatient)",
+      "status": "PASSED",
+      "durationMs": 228,
+      "patientId": 2092
+    },
+    {
+      "step": 4,
+      "name": "Patient Profile Verification (GetPatientById)",
+      "status": "PASSED",
+      "durationMs": 52
+    },
+    {
+      "step": 5,
+      "name": "Admission Encounter & Bed Allocation",
+      "status": "PASSED",
+      "durationMs": 26
+    }
+  ],
+  "success": true,
+  "createdPatient": {
+    "id": 2092,
+    "name": "Trauma7446 EmergencyTest",
+    "mrn": null,
+    "mobile": "9876547446",
+    "age": 34,
+    "genderId": 1,
+    "address": "NH-2 Accident Spot, Raniganj Bypass"
+  },
+  "admissionDetails": {
+    "wardId": 1,
+    "wardName": "EMERGENCY",
+    "roomId": 1,
+    "roomName": "EMG01 - GREMG",
+    "bedId": 3,
+    "bedStatus": "Occupied",
+    "doctor": "ANUP DUKANIYA"
+  }
+}

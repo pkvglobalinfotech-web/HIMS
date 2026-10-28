@@ -127,7 +127,7 @@
                         //     }
                         // },
                     {
-                        type: '',
+                        type: 'dummy',
                         translate: '',
                         model: '',
                         position: {
@@ -136,7 +136,7 @@
                         }
                     },
                     {
-                        type: '',
+                        type: 'dummy',
                         translate: '',
                         model: '',
                         position: {
@@ -167,18 +167,69 @@
             return new Date(b.BillDateTime).getTime() - new Date(a.BillDateTime).getTime();
         };
 
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                title: 'Pharmacy Direct Outstanding Bills',
+                subtitle: 'Search and collect direct pharmacy sales & outstanding credit balances',
+                isOutstanding: true,
+                totalOutstanding: $scope.currentcontext.TotalOutstanding || 0,
+                modeldata: angular.copy($scope.modeldata || {}),
+                lookup: angular.copy($scope.lookup || {}),
+                gridData: angular.copy($scope.gridData || []),
+                totalBillAmount: $scope.currentcontext.TotalOutstanding || 0,
+                pagerObj: angular.copy(vm.gridConfig.pagerObj || {}),
+                context: 'outstanding',
+                isLoading: Boolean($scope.isLoading)
+            };
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'updateFilter') {
+                if (payload && payload.field) {
+                    $scope.modeldata[payload.field] = payload.value;
+                }
+            } else if (actionName === 'setFilters') {
+                if (payload) {
+                    angular.extend($scope.modeldata, payload);
+                }
+            } else if (actionName === 'fetch') {
+                $scope.actionClick('apply');
+            } else if (actionName === 'reset') {
+                $scope.actionClick('reset');
+            } else if (actionName === 'changePage') {
+                if (payload && payload.page) {
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList(payload.page);
+                }
+            } else if (actionName === 'select') {
+                if (payload && payload.item) {
+                    $scope.handleEvents('select', payload.item);
+                }
+            } else if (actionName === 'close') {
+                if (typeof $scope.cancelCallback === 'function') {
+                    $scope.cancelCallback();
+                }
+            }
+            $scope.refreshReactProps();
+            $scope.$applyAsync();
+        };
+
         $scope.getListCallback = function (scope, res, options, hasError) {
-            if (res.Data.length > 0)
+            $scope.isLoading = false;
+            if (res && res.Data && res.Data.length > 0)
                 res.Data.sort($scope.custom_sort);
-            $scope.gridData = res.Data;
+            $scope.gridData = (res && res.Data) ? res.Data : [];
             $scope.currentcontext.TotalOutstanding = 0;
             for (var idx in $scope.gridData) {
                 var billitem = $scope.gridData[idx];
-                $scope.currentcontext.TotalOutstanding = $scope.currentcontext.TotalOutstanding + billitem.OutStandingAmount;
+                $scope.currentcontext.TotalOutstanding = $scope.currentcontext.TotalOutstanding + (billitem.OutStandingAmount || 0);
             }
             var items = $scope.gridData;
             vm.gridConfig.data = items;
-            vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            if (res && res.PageContext) {
+                vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            }
+            $scope.refreshReactProps();
             $('#FromDate').focus();
         };
 
@@ -196,6 +247,8 @@
         /* Pharmacy Sales Find Bills - Shortcut Keys - End */
 
         $scope.getList = function (pageNo) {
+            $scope.isLoading = true;
+            $scope.refreshReactProps();
             var inputData = {};
             var FrmDate = $filter('date')($scope.modeldata.FromDate, 'yyyy-MM-dd 00:00:00');
             var ToDate = $filter('date')($scope.modeldata.ToDate, 'yyyy-MM-dd 23:59:59');
@@ -320,11 +373,14 @@
         $scope.handleEvents = function (actionType, entity) {
             if (actionType == 'select') {
                 $scope.confirmCallback({
-                    BillId: entity.Id
+                    BillId: entity.Id,
+                    BillStatusId: entity.PatientBillStatusId,
+                    StoreId: entity.StoreMasterId
                 });
-                //    $state.go('app.ipbillingtab.summary');
             } else if (actionType == 'patientinfo') {
-                $scope.patientprofiledetails(entity.Patient.Id);
+                if (typeof $scope.patientprofiledetails === 'function') {
+                    $scope.patientprofiledetails(entity.Patient ? entity.Patient.Id : entity.PatientId);
+                }
             }
         };
 
@@ -414,6 +470,7 @@
                 }
             });
             initDynamicForm();
+            $scope.refreshReactProps();
             $scope.getList();
         };
 

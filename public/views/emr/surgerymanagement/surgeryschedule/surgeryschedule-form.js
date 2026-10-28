@@ -44,6 +44,127 @@
         $scope.currentcontext.eid = parseInt($stateParams.eid);
         $scope.currentcontext.pid = parseInt($stateParams.pid);
 
+        function padTime(n) { return n < 10 ? '0' + n : '' + n; }
+
+        function normalizeTime(val) {
+            if (!val) return '';
+            if (typeof val === 'string') {
+                var parts = val.split(':');
+                if (parts.length >= 2) {
+                    var h = parseInt(parts[0].trim(), 10);
+                    var m = parseInt(parts[1].trim(), 10);
+                    if (!isNaN(h) && !isNaN(m)) {
+                        return padTime(h) + ':' + padTime(m);
+                    }
+                }
+            }
+            if (val instanceof Date && !isNaN(val.getTime())) {
+                return padTime(val.getHours()) + ':' + padTime(val.getMinutes());
+            }
+            return val;
+        }
+
+        $scope.timeOptions = (function () {
+            var list = [];
+            for (var h = 0; h < 24; h++) {
+                for (var m = 0; m < 60; m += 15) {
+                    var hh = padTime(h);
+                    var mm = padTime(m);
+                    var val = hh + ':' + mm;
+                    var period = h >= 12 ? 'PM' : 'AM';
+                    var displayH = h % 12;
+                    if (displayH === 0) displayH = 12;
+                    var displayHStr = padTime(displayH);
+                    var label = displayHStr + ':' + mm + ' ' + period + ' (' + val + ')';
+                    list.push({ value: val, label: label });
+                }
+            }
+            return list;
+        })();
+
+        $scope.datePickerOptions = angular.extend({}, $scope.datePickerOptions || {}, {
+            minDate: new Date(),
+            showWeeks: false,
+            dateFormat: 'dd/MM/yyyy',
+            dateTimeFormat: 'dd-MMM-yyyy',
+            showButtonBar: false,
+            placeholder: 'DD-MMM-YYYY'
+        });
+
+        function getTodayMidnight() {
+            var d = new Date();
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+
+        function parseToDate(val) {
+            if (!val) return null;
+            if (val instanceof Date) return new Date(val.getFullYear(), val.getMonth(), val.getDate());
+            var d = new Date(val);
+            if (isNaN(d.getTime()) && typeof moment !== 'undefined') {
+                d = moment(val).toDate();
+            }
+            if (isNaN(d.getTime())) return null;
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+
+        $scope.isPastDate = function (dateVal) {
+            var d = parseToDate(dateVal || $scope.item.OTScheduledOn);
+            if (!d) return false;
+            return d < getTodayMidnight();
+        };
+
+        $scope.isTodayDate = function (dateVal) {
+            var d = parseToDate(dateVal || $scope.item.OTScheduledOn);
+            if (!d) return false;
+            return d.getTime() === getTodayMidnight().getTime();
+        };
+
+        $scope.isPastTime = function (timeVal) {
+            if (!$scope.item.OTScheduledOn) return false;
+            if ($scope.isPastDate($scope.item.OTScheduledOn)) return true;
+            if (!$scope.isTodayDate($scope.item.OTScheduledOn)) return false;
+
+            if (timeVal) {
+                var parts = ('' + timeVal).split(':');
+                if (parts.length >= 2) {
+                    var h = parseInt(parts[0], 10);
+                    var m = parseInt(parts[1], 10);
+                    var slotMin = h * 60 + m;
+                    var now = new Date();
+                    var curMin = now.getHours() * 60 + now.getMinutes();
+                    return slotMin < curMin;
+                }
+            }
+            return false;
+        };
+
+        function getUpcomingSlot(minMinutesAhead) {
+            var now = new Date();
+            var curMin = now.getHours() * 60 + now.getMinutes() + (minMinutesAhead || 0);
+            var nextSlotMin = Math.ceil(curMin / 15) * 15;
+            if (nextSlotMin >= 24 * 60) nextSlotMin = 24 * 60 - 15;
+            var h = Math.floor(nextSlotMin / 60);
+            var m = nextSlotMin % 60;
+            return padTime(h) + ':' + padTime(m);
+        }
+
+        if (!$scope.currentcontext.id) {
+            var defaultStart = getUpcomingSlot(15);
+            $scope.item.StartTime = defaultStart;
+            var sMin = parseInt(defaultStart.split(':')[0], 10) * 60 + parseInt(defaultStart.split(':')[1], 10);
+            var eMin = sMin + 30;
+            if (eMin >= 24 * 60) eMin = 24 * 60 - 1;
+            $scope.item.EndTime = padTime(Math.floor(eMin / 60)) + ':' + padTime(eMin % 60);
+        }
+
+        $scope.$watch('item.OTScheduledOn', function (newVal, oldVal) {
+            if (!newVal || newVal === oldVal) return;
+            if ($scope.isPastDate(newVal)) {
+                utl.Alert.showErrorMsg('Cannot schedule surgery in past date.');
+                $scope.item.OTScheduledOn = utl.Formatter.getCurrentDate();
+            }
+        });
+
         $scope.addNewLineItem = function () {
             var lineItem = {
                 Id: 0,
@@ -133,6 +254,10 @@
         };
         $scope.getItemCallback = function (scope, data, options, hasError) {
             $scope.item = data;
+            if ($scope.item) {
+                $scope.item.StartTime = normalizeTime($scope.item.StartTime) || '08:00';
+                $scope.item.EndTime = normalizeTime($scope.item.EndTime) || '09:00';
+            }
             if (data.OtScheduleDetails.length > 0) {
                 $scope.Procedures = data.OtScheduleDetails;
             }
@@ -525,28 +650,46 @@
         }
         $scope.doctorChange = function () {
             //Set selected doctor department id to appointment department id
-            var doctorObj = utl.Lookup.getObject($scope.lookup.Doctor, $scope.item.DoctorId);
-            for (var idx in $scope.lookup.Department) {
-                if ($scope.lookup.Department[idx].Id == doctorObj.DepartmentId) {
-                    if ($scope.currentcontext.selecteddept.indexOf($scope.lookup.Department[idx]) == -1) {
-                        $scope.currentcontext.selecteddept.push($scope.lookup.Department[idx]);
+            if (!$scope.currentcontext.selecteddept) {
+                $scope.currentcontext.selecteddept = [];
+            }
+            if ($scope.item.DoctorId && $scope.lookup.Doctor) {
+                var doctorObj = utl.Lookup.getObject($scope.lookup.Doctor, $scope.item.DoctorId);
+                if (doctorObj && doctorObj.DepartmentId && $scope.lookup.Department) {
+                    for (var idx in $scope.lookup.Department) {
+                        if ($scope.lookup.Department[idx] && $scope.lookup.Department[idx].Id == doctorObj.DepartmentId) {
+                            if ($scope.currentcontext.selecteddept.indexOf($scope.lookup.Department[idx]) == -1) {
+                                $scope.currentcontext.selecteddept.push($scope.lookup.Department[idx]);
+                            }
+                        }
                     }
                 }
             }
-            if ($scope.currentcontext.selecteddept && $scope.currentcontext.selecteddept.length > 0)
+            if ($scope.currentcontext.selecteddept && $scope.currentcontext.selecteddept.length > 0 && $scope.currentcontext.selecteddept[0]) {
                 $scope.item.DepartmentId = $scope.currentcontext.selecteddept[0].Id;
-
-        }
+            }
+        };
 
         $scope.getdeptCallback = function (scope, data, options, hasError) {
             $scope.item.map = data;
-            var dept = [];
-            for (var idx in data) {
-                dept.push(data[idx])
-                for (var iddx in $scope.lookup.Department) {
-                    if ($scope.lookup.Department[iddx].Id == dept[idx].DepartmentId)
-                        $scope.currentcontext.selecteddept.push($scope.lookup.Department[iddx]);
+            if (!$scope.currentcontext.selecteddept) {
+                $scope.currentcontext.selecteddept = [];
+            }
+            if (data && Array.isArray(data)) {
+                for (var idx = 0; idx < data.length; idx++) {
+                    var deptItem = data[idx];
+                    if (deptItem && $scope.lookup.Department) {
+                        for (var iddx in $scope.lookup.Department) {
+                            if ($scope.lookup.Department[iddx] && $scope.lookup.Department[iddx].Id == deptItem.DepartmentId) {
+                                if ($scope.currentcontext.selecteddept.indexOf($scope.lookup.Department[iddx]) == -1) {
+                                    $scope.currentcontext.selecteddept.push($scope.lookup.Department[iddx]);
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+            if ($scope.currentcontext.selecteddept && $scope.currentcontext.selecteddept.length > 0 && $scope.currentcontext.selecteddept[0]) {
                 $scope.item.DepartmentId = $scope.currentcontext.selecteddept[0].Id;
             }
             $scope.doctorChange();
@@ -1402,13 +1545,24 @@
         };
         //Load patient guarantors
         $scope.loadPatientGuarantorsCallback = function (scope, data, options, hasError) {
-            data.PatientGuarantor.sort(sort_by('Rank', false, parseInt));
-            $scope.lookup['PatientGuarantor'] = data.PatientGuarantor;
-            if (!$scope.item.GuarantorId) {
-                $scope.item.GuarantorId = utl.Lookup.getDefault($scope.lookup.PatientGuarantor, 'SELF');
+            if (data && data.PatientGuarantor && Array.isArray(data.PatientGuarantor)) {
+                data.PatientGuarantor.sort(sort_by('Rank', false, parseInt));
+                $scope.lookup['PatientGuarantor'] = data.PatientGuarantor;
+                if (!$scope.item.GuarantorId) {
+                    var defId = utl.Lookup.getDefault($scope.lookup.PatientGuarantor, 'SELF');
+                    if (defId && defId !== -1) {
+                        $scope.item.GuarantorId = defId;
+                    } else if (data.PatientGuarantor.length > 0 && data.PatientGuarantor[0]) {
+                        $scope.item.GuarantorId = data.PatientGuarantor[0].Id;
+                    }
+                }
+            } else {
+                $scope.lookup['PatientGuarantor'] = [];
             }
-            $scope.guarantorType($scope.item.GuarantorId);
-        }
+            if ($scope.item.GuarantorId) {
+                $scope.guarantorType($scope.item.GuarantorId);
+            }
+        };
 
         $scope.loadPatientGuarantors = function () {
             //Get only active guarantors - 2

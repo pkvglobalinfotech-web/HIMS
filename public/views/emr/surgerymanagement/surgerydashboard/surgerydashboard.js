@@ -93,6 +93,7 @@
 
                 $scope.todaysurgeryData.push(surgeryInfo);
             }
+            $scope.refreshReactProps();
         }
 
         $scope.getList = function () {
@@ -158,7 +159,47 @@
 
                 $scope.todaysurgerycompletedData.push(surgerycompletedInfo);
             }
+            $scope.refreshReactProps();
         }
+
+        $scope.reactProps = {
+            todaysurgeryData: [],
+            todaysurgerycompletedData: [],
+            currentfilter: $scope.currentfilter
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                todaysurgeryData: $scope.todaysurgeryData || [],
+                todaysurgerycompletedData: $scope.todaysurgerycompletedData || [],
+                currentfilter: angular.copy($scope.currentfilter)
+            };
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'dateChange') {
+                $scope.currentfilter.OTScheduledOn = payload;
+                $scope.getList();
+                $scope.getCompleted();
+            } else if (actionName === 'refresh') {
+                $scope.getList();
+                $scope.getCompleted();
+            } else if (actionName === 'surgeryschedule') {
+                $scope.surgeryschedule();
+            } else if (actionName === 'scheduleconfirmed') {
+                $scope.scheduleconfirmed();
+            } else if (actionName === 'procedure') {
+                $scope.procedure();
+            } else if (actionName === 'inpatientlist') {
+                $scope.inpatientlist();
+            } else if (actionName === 'stockindents') {
+                $scope.stockindents();
+            } else if (actionName === 'stockreceives') {
+                $scope.stockreceives();
+            } else if (actionName === 'report') {
+                $scope.report();
+            }
+        };
 
         $scope.getCompleted = function () {
             var From = $filter('date')($scope.currentfilter.OTScheduledOn, 'yyyy-MM-dd 00:00:00') || null;
@@ -171,7 +212,7 @@
                     { Key: 19, Value: false },
                 ],
                 PageContext: {
-                    PageSize: 6,
+                    PageSize: 20,
                     PageNumber: 1
                 }
             };

@@ -164,7 +164,7 @@
                     // },
 
                     {
-                        type: '',
+                        type: 'dummy',
                         translate: '',
                         model: '',
                         position: {
@@ -173,7 +173,7 @@
                         }
                     },
                     {
-                        type: '',
+                        type: 'dummy',
                         translate: '',
                         model: '',
                         position: {

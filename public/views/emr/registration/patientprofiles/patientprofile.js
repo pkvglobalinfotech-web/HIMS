@@ -16,6 +16,30 @@
             $scope.cancelCallback = $uibModalInstance.dismiss;
         }
 
+        /* React Component Bridge */
+        $scope.reactProps = {
+            item: $scope.item,
+            currentcontext: $scope.currentcontext,
+            patientId: $scope.currentcontext.pid
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                item: $scope.item,
+                currentcontext: $scope.currentcontext,
+                patientId: $scope.currentcontext.pid
+            };
+        };
+
+        $scope.handleReactAction = function (action, payload) {
+            if (action === 'close' || action === 'cancel') {
+                if (typeof $scope.cancelCallback === 'function') {
+                    $scope.cancelCallback();
+                }
+            } else if (action === 'print') {
+                window.print();
+            }
+        };
 
         $scope.doctor_dashboard = function () {
             $state.go('app.doctordashboard');
@@ -47,6 +71,8 @@
                     }
                 }
             }
+            $scope.refreshReactProps();
+            $scope.$applyAsync();
         };
 
         $scope.getLatestEncounterDetails = function () {
@@ -76,11 +102,15 @@
         $scope.getPatientGuarantorDetailsCallback = function (scope, data, options, hasError) {
             if (data.Data.length > 0) {
                 $scope.item.MemberId = data.Data[0].MemberId;
+                $scope.refreshReactProps();
+                $scope.$applyAsync();
             }
         };
 
         $scope.getPatientProfilePicCallback = function (scope, data, options, hasError) {
             $scope.currentcontext.Photo = data.Photo;
+            $scope.refreshReactProps();
+            $scope.$applyAsync();
         };
 
         $scope.getPatientProfilePic = function () {
@@ -166,6 +196,12 @@
                 $scope.item.Country = $scope.selectedPatient.Country;
                 $scope.item.State = $scope.selectedPatient.State;
                 $scope.item.PasspostNumber = $scope.selectedPatient.PasspostNumber;
+                var addressParts = [$scope.selectedPatient.AddressLine1, $scope.selectedPatient.AddressLine2, $scope.selectedPatient.City, $scope.selectedPatient.State, $scope.selectedPatient.Country].filter(function (part) {
+                    return part && typeof part === 'string' && part.trim().length > 0;
+                });
+                $scope.item.FullAddress = addressParts.length > 0 ? addressParts.join(', ') : 'Not Specified';
+                var nameParts = ($scope.item.PatientName || '').replace(/^(Mr|Mrs|Ms|Master|Dr|Prof)\.?\s+/i, '').split(' ').filter(Boolean);
+                $scope.item.Initials = nameParts.slice(0, 2).map(function(n) { return n[0].toUpperCase(); }).join('') || 'PT';
                 if ($scope.selectedPatient.Guarantor) {
                     if ($scope.selectedPatient.Guarantor.GuarantorName)
                         $scope.item.GuarantorName = $scope.selectedPatient.Guarantor.GuarantorName;
@@ -232,7 +268,8 @@
                 }
                 $scope.getLatestEncounterDetails();
                 $scope.getPatientProfilePic();
-
+                $scope.refreshReactProps();
+                $scope.$applyAsync();
             }
         };
 

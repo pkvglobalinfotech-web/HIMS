@@ -80,6 +80,7 @@
                 AdmissionStatus: null,
                 tabindex: $scope.tabindexmap.detailtabindex++
             };
+            if ($scope.refreshReactProps) $scope.refreshReactProps();
         }
 
         //Guarantor List
@@ -301,6 +302,7 @@
 
                 $scope.applyVisibilityRules();
                 $scope.loadPatientGuarantors();
+                if ($scope.refreshReactProps) $scope.refreshReactProps();
             }
         };
 
@@ -351,8 +353,11 @@
         $scope.addNew = function () {
             $scope.selectedPatient = {};
             $scope.currentcontext.id = 0;
-            document.getElementById("item_form").reset();
+            if (document.getElementById("item_form")) {
+                document.getElementById("item_form").reset();
+            }
             $scope.fillDefaultValues();
+            if ($scope.refreshReactProps) $scope.refreshReactProps();
         }
         // $scope.fitfordischarge = function () {
         //     $scope.item.AdmissionStatusId = 3;
@@ -1202,7 +1207,7 @@
                 $scope.fillDefaultValues();
                 return false;
             }
-            if ($scope.item.Patient.Encounters && $scope.item.Patient.Encounters,length > 0) {
+            if ($scope.item.Patient.Encounters && $scope.item.Patient.Encounters.length > 0) {
                 if ($scope.item.Patient.Encounters[0].IsLatest == true && $scope.item.Patient.Encounters[0].IsDayCare == true && $scope.item.Patient.Encounters[0].IsEmergencyVisit == true) {
                     utl.Alert.showErrorMsg($translate.instant("Patient already in Emergency Admission.. Please Check it"));
                     return false;
@@ -1217,11 +1222,13 @@
                 $scope.item.ReferralId = $scope.item.Patient.ReferrerId;
                 $scope.item.ReferralTypeId = $scope.item.Patient.ReferTypeId;
             }
+            $scope.selectedPatient = data;
             $scope.$parent.selectedPatient = data;
             $scope.$parent.getPatientAlertsCount();
             if ($scope.currentcontext.id == 0)
                 $scope.getEncounters()
             $scope.loadPatientGuarantors();
+            if ($scope.refreshReactProps) $scope.refreshReactProps();
         }
 
 
@@ -2102,6 +2109,7 @@
             forEach(data, function (value, key) {
                 $scope.lookup[key] = value;
             });
+            if ($scope.refreshReactProps) $scope.refreshReactProps();
         }
         $scope.getReferral = function (selectedItem) {
             $scope.item.ReferralName = (selectedItem)? selectedItem.Text: '';
@@ -2301,6 +2309,9 @@
             // $scope.checkBedTariff();
             if ($scope.item.GuarantorTypeId && $scope.item.WardId) {
                 $scope.getWardInsuranceTariffs($scope.item);
+            }
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
             }
         }
 
@@ -3206,8 +3217,182 @@
         }
 
 
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                item: $scope.item,
+                lookup: $scope.lookup,
+                selectedPatient: $scope.selectedPatient || $scope.$parent.selectedPatient || {},
+                patientSearchResults: $scope.patientSearchResults || [],
+                currentcontext: $scope.currentcontext,
+                Data: $scope.Data || {},
+                flags: {
+                    SaveCompleted: Boolean($scope.SaveCompleted),
+                    BillCompleted: Boolean($scope.BillCompleted),
+                    isPatientDeactivated: Boolean($scope.isPatientDeactivated),
+                    canShowSaveBtn: $scope.canShowSaveBtn !== false,
+                    canShowSaveandApproveBtn: $scope.canShowSaveandApproveBtn !== false,
+                    canphysicaldischargeBtn: Boolean($scope.canphysicaldischargeBtn),
+                    canShowCancelledBtn: Boolean($scope.canShowCancelledBtn),
+                    canbedoccupancyBtn: $scope.canbedoccupancyBtn !== false,
+                    canhistoryBtn: Boolean($scope.canhistoryBtn),
+                    canprintBtn: Boolean($scope.canprintBtn),
+                    DisRateType: Boolean($scope.DisRateType),
+                    ShowAdmissionDate: Boolean($scope.ShowAdmissionDate)
+                }
+            };
+            if (!$scope.$$phase) {
+                $scope.$applyAsync();
+            }
+        };
+
+        $scope.handleReactAction = function (action, payload) {
+            if (action === 'fieldChange' && payload) {
+                $scope.item[payload.field] = payload.value;
+                $scope.refreshReactProps();
+            } else if (action === 'searchPatients') {
+                var query = (payload && payload.query !== undefined) ? payload.query : '';
+                var facilityId = utl.Session.getCurrentFacilityId();
+                var inputData = {
+                    Params: [
+                        { Key: 7, Value: 2 },
+                        { Key: 37, Value: 2 },
+                        { Key: 29, Value: facilityId },
+                        { Key: 25, Value: 1 },
+                        { Key: 1, Value: query }
+                    ],
+                    PageContext: { PageSize: 20, PageNumber: 1 }
+                };
+                utl.Http.doAction({
+                    action: 'registration/Patient/GetMinPatientSearch',
+                    data: inputData,
+                    type: 'post',
+                    silent: true,
+                    onComplete: function (scope, res) {
+                        var list = (res && res.Data) ? res.Data : (Array.isArray(res) ? res : []);
+                        $scope.patientSearchResults = list;
+                        if (payload && typeof payload.callback === 'function') {
+                            payload.callback(list);
+                        }
+                        $scope.refreshReactProps();
+                    },
+                    onError: function () {
+                        utl.Http.doAction({
+                            action: 'registration/Patient/GetPatients',
+                            data: inputData,
+                            type: 'post',
+                            silent: true,
+                            onComplete: function (scope, res) {
+                                var list = (res && res.Data) ? res.Data : (Array.isArray(res) ? res : []);
+                                $scope.patientSearchResults = list;
+                                if (payload && typeof payload.callback === 'function') {
+                                    payload.callback(list);
+                                }
+                                $scope.refreshReactProps();
+                            }
+                        });
+                    }
+                });
+            } else if (action === 'doctorChange') {
+                $scope.item.DoctorId = payload;
+                $scope.doctorChange();
+                $scope.refreshReactProps();
+            } else if (action === 'locationChange') {
+                $scope.item.LocationId = payload;
+                $scope.wardLookUp();
+                $scope.refreshReactProps();
+            } else if (action === 'wardChange') {
+                $scope.item.WardId = payload;
+                $scope.getRoomLookUp();
+                $scope.refreshReactProps();
+            } else if (action === 'roomChange') {
+                $scope.item.RoomId = payload;
+                $scope.getBedLookUp();
+                $scope.refreshReactProps();
+            } else if (action === 'bedChange') {
+                $scope.item.BedId = payload;
+                $scope.tariffChange();
+                $scope.refreshReactProps();
+            } else if (action === 'referralTypeChange') {
+                $scope.item.ReferralTypeId = payload;
+                $scope.getReferralLookUp();
+                $scope.refreshReactProps();
+            } else if (action === 'guarantorTypeChange') {
+                $scope.item.GuarantorTypeId = payload;
+                $scope.GetGuarantor();
+                $scope.refreshReactProps();
+            } else if (action === 'patientSelect') {
+                $scope.item.PatientId = payload.Id;
+                $scope.selectedPatient = payload;
+                $scope.patientChange();
+                $scope.refreshReactProps();
+            } else if (action === 'clearPatient') {
+                $scope.item.PatientId = null;
+                $scope.item.Patient = null;
+                $scope.selectedPatient = {};
+                $scope.refreshReactProps();
+            } else if (action === 'save') {
+                $scope.save();
+            } else if (action === 'saveAndApprove') {
+                $scope.saveAndApprove();
+            } else if (action === 'saveEmergency') {
+                $scope.saveEmergency();
+            } else if (action === 'savedaycare') {
+                $scope.savedaycare();
+            } else if (action === 'backToList') {
+                $scope.backToList();
+            } else if (action === 'addNew') {
+                $scope.addNew();
+                $scope.refreshReactProps();
+            } else if (action === 'openWardBed') {
+                $scope.openWardBed();
+            } else if (action === 'addReferral') {
+                $scope.addReferral();
+            } else if (action === 'addGuarantor') {
+                $scope.addGuarantor();
+            } else if (action === 'Diagnosis') {
+                $scope.Diagnosis();
+            } else if (action === 'addRemark') {
+                $scope.addRemark();
+            } else if (action === 'patcmnts') {
+                $scope.patcmnts();
+            } else if (action === 'clinicalalertview') {
+                $scope.clinicalalertview();
+            } else if (action === 'consultationcharges') {
+                $scope.consultationcharges();
+            } else if (action === 'OPDBill') {
+                $scope.OPDBill();
+            } else if (action === 'checkout') {
+                $scope.checkout();
+            } else if (action === 'openattachments') {
+                $scope.openattachments();
+            } else if (action === 'saveAndInactive') {
+                $scope.saveAndInactive($scope.item);
+            } else if (action === 'admsnCancel') {
+                $scope.admsnCancel();
+            } else if (action === 'Bedoccupancy') {
+                $scope.Bedoccupancy();
+            } else if (action === 'mlcForm') {
+                $scope.mlcForm();
+            } else if (action === 'print') {
+                $scope.print();
+            } else if (action === 'print2') {
+                $scope.print2();
+            } else if (action === 'print5') {
+                $scope.print5();
+            } else if (action === 'admissionlablescript') {
+                $scope.admissionlablescript();
+            } else if (action === 'openPatientConsentPrint') {
+                $scope.openPatientConsentPrint();
+            } else if (action === 'wristbandprint') {
+                $scope.wristbandprint();
+            } else if (action === 'patientDischarge') {
+                $scope.patientDischarge();
+            }
+        };
+
         $scope.fillDefaultValues();
         $scope.initAllLookup();
+        $scope.refreshReactProps();
     }
     // Referaltype based Referral Lookup - End
 

@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     'use strict';
 
     angular
@@ -31,8 +31,9 @@
 
 	            for (var idx in inputControls) {
 	                var item = inputControls[idx];
-	                item.tmpl = 'dyn-' + item.type + '.html';
-	                item.colspan = 12 / rowPosMap[item.position.r];
+	                var controlType = (item.type && String(item.type).trim() !== '') ? item.type : 'dummy';
+	                item.tmpl = 'dyn-' + controlType + '.html';
+	                item.colspan = 12 / (rowPosMap[item.position.r] || 1);
 
 	                if (item.controls) {
 	                    prepareControls(item.controls)

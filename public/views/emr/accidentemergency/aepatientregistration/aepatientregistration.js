@@ -435,6 +435,9 @@
                 $scope.PatGuarantorNoofFreeVisit = 0;
                 $scope.setDefaultService();
             }
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.GetGuarantor = function () {
@@ -1988,7 +1991,7 @@
                 return;
             }
 
-            if (utl.Formatter.isFutureDate($scope.item.DOB)) {
+            if ($scope.item.DOB && utl.Formatter.isFutureDate($scope.item.DOB)) {
                 utl.Alert.showErrorMsg($translate.instant('registration.quickregistration.dobdate-cant-future-msg.lbl'));
                 return;
             }
@@ -2447,7 +2450,7 @@
                 return;
             }
 
-            if (utl.Formatter.isFutureDate($scope.item.DOB)) {
+            if ($scope.item.DOB && utl.Formatter.isFutureDate($scope.item.DOB)) {
                 utl.Alert.showErrorMsg($translate.instant('registration.quickregistration.dobdate-cant-future-msg.lbl'));
                 return;
             }
@@ -3807,6 +3810,9 @@
             }
             $scope.loadAdditionalLookup();
             $scope.getFacility();
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
             // $scope.getDefaultReferral();
         };
 
@@ -3897,6 +3903,9 @@
         $scope.RoomCallback = function (scope, data, options, hasError) {
             $scope.lookup['Room'] = hasError ? {} : data.Room;
             $scope.getBedLookUp();
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
         };
         $scope.getRoomLookUp = function () {
             var inputData = [{
@@ -3917,10 +3926,16 @@
             utl.Http.doAction(options);
             $scope.item.RoomId = null;
             $scope.item.BedId = null;
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
         }
 
         $scope.BedCallback = function (scope, data, options, hasError) {
             $scope.lookup['Bed'] = hasError ? {} : data.Bed;
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
         };
         $scope.getBedLookUp = function () {
             var inputData = [{
@@ -4864,6 +4879,84 @@
 
         $scope.initLookup();
 
+        $scope.reactProps = {
+            item: $scope.item,
+            lookup: $scope.lookup || {},
+            selectedPatient: $scope.selectedPatient,
+            currentcontext: $scope.currentcontext,
+            flags: {
+                SaveCompleted: $scope.SaveCompleted,
+                BillCompleted: $scope.BillCompleted,
+                isPatientDeactivated: $scope.isPatientDeactivated,
+                ShowDayCarefields: $scope.ShowDayCarefields
+            }
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                item: $scope.item,
+                lookup: $scope.lookup || {},
+                selectedPatient: $scope.selectedPatient,
+                currentcontext: $scope.currentcontext,
+                flags: {
+                    SaveCompleted: $scope.SaveCompleted,
+                    BillCompleted: $scope.BillCompleted,
+                    isPatientDeactivated: $scope.isPatientDeactivated,
+                    ShowDayCarefields: $scope.ShowDayCarefields
+                }
+            };
+            if (!$scope.$$phase) {
+                $scope.$applyAsync();
+            }
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'fieldChange' && payload) {
+                $scope.item[payload.field] = payload.value;
+                if (payload.field === 'IsDayCare') {
+                    $scope.isdaycarechanged(payload.value);
+                } else if (payload.field === 'WardId') {
+                    $scope.getRoomLookUp();
+                } else if (payload.field === 'RoomId') {
+                    $scope.getBedLookUp();
+                } else if (payload.field === 'GuarantorTypeId') {
+                    $scope.GetGuarantor();
+                } else if (payload.field === 'Pincode') {
+                    if (payload.value && String(payload.value).length === 6) {
+                        $scope.getPincodeData(payload.value);
+                    }
+                }
+                $scope.refreshReactProps();
+            } else if (actionName === 'saveAndApprove') {
+                if (payload) {
+                    if (payload.DOB === '') payload.DOB = null;
+                    angular.extend($scope.item, payload);
+                }
+                $scope.saveAndApprove();
+            } else if (actionName === 'saveDraft') {
+                if (payload) {
+                    if (payload.DOB === '') payload.DOB = null;
+                    angular.extend($scope.item, payload);
+                }
+                $scope.saveItem();
+            } else if (actionName === 'addNew') {
+                $scope.addNew();
+            } else if (actionName === 'admission') {
+                $scope.admission();
+            } else if (actionName === 'backtoList') {
+                $state.go('app.aedashboard');
+            } else if (actionName === 'printRegistration') {
+                $scope.printRegistration();
+            } else if (actionName === 'patientidcard') {
+                $scope.printRegistrationIdCard();
+            } else if (actionName === 'patientSearch' && payload) {
+                if ($scope.searchPatient) {
+                    $scope.searchPatient(payload.term);
+                }
+            } else if (actionName === 'clear') {
+                $scope.clear();
+            }
+        };
     }
 
     aepatientRegistrationController.$inject = ['$rootScope', '$scope', '$timeout', '$stateParams', '$state', '$translate', 'utl', 'Upload'];

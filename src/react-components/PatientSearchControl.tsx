@@ -162,79 +162,195 @@ export const PatientSearchControl: React.FC<PatientSearchControlProps> = ({
       {isOpen && (results.length > 0 || isLoading) && (
         <div
           style={{
-            display: 'block',
+            display: 'flex',
+            flexDirection: 'column',
             position: 'absolute',
-            top: '100%',
+            top: 'calc(100% + 4px)',
             left: 0,
-            // Kept at the original literal 9999 (rather than the tokens.zIndex.dropdown
-            // value of 1000) deliberately: this overlay must stay above any host-page
-            // chrome it renders inside across the whole app, exactly as before --
-            // adopting the lower shared token here is a real stacking-behavior change,
-            // not a visual-only one, so it's out of scope for this pass.
             zIndex: 9999,
-            maxHeight: '250px',
-            overflow: 'auto',
-            maxWidth: '600px',
-            marginTop: '2px',
+            maxHeight: '340px',
+            width: '560px',
+            maxWidth: '90vw',
             backgroundColor: colors.surface,
             border: `1px solid ${colors.border}`,
-            borderRadius: radii.md,
-            boxShadow: shadows.lg,
+            borderRadius: radii.lg,
+            boxShadow: shadows.xl,
+            overflow: 'hidden',
           }}
         >
-          {isLoading && results.length === 0 ? (
-            <Loading text="Loading..." size="sm" />
-          ) : (
-            <table className="table table-bordered table-condensed" style={{ margin: 0, background: 'transparent', borderCollapse: 'collapse' }} role="listbox">
-              <thead>
-                <tr style={{ backgroundColor: colors.primary }}>
-                  <th style={{ width: '120px', color: '#ffffff', ...typography.label, fontFamily: typography.fontFamily, padding: `${spacing.xs} ${spacing.sm}` }}>Title</th>
-                  <th style={{ minWidth: '100px', color: '#ffffff', ...typography.label, fontFamily: typography.fontFamily, padding: `${spacing.xs} ${spacing.sm}` }}>Name</th>
-                  <th style={{ width: '110px', color: '#ffffff', ...typography.label, fontFamily: typography.fontFamily, padding: `${spacing.xs} ${spacing.sm}` }}>DOB</th>
-                  <th style={{ width: '70px', color: '#ffffff', ...typography.label, fontFamily: typography.fontFamily, padding: `${spacing.xs} ${spacing.sm}` }}>Age/Gender</th>
-                  <th style={{ width: '100px', color: '#ffffff', ...typography.label, fontFamily: typography.fontFamily, padding: `${spacing.xs} ${spacing.sm}` }}>MRN</th>
-                  <th style={{ width: '100px', color: '#ffffff', ...typography.label, fontFamily: typography.fontFamily, padding: `${spacing.xs} ${spacing.sm}` }}>Mobile #</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((patient, index) => {
-                  // Format DOB
-                  let dobDisplay = '';
-                  if (patient.DOB) {
-                    const d = new Date(patient.DOB);
-                    if (!isNaN(d.getTime())) {
-                      const day = d.getDate().toString().padStart(2, '0');
-                      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                      const month = months[d.getMonth()];
-                      const year = d.getFullYear();
-                      dobDisplay = `${day}-${month}-${year}`;
-                    }
-                  }
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              backgroundColor: colors.surfaceMuted,
+              borderBottom: `1px solid ${colors.border}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="fa-solid fa-users" style={{ color: colors.primary, fontSize: 13 }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: colors.textMain, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Matching Patients
+              </span>
+              <span
+                style={{
+                  backgroundColor: colors.primaryLight,
+                  color: colors.primary,
+                  padding: '2px 8px',
+                  borderRadius: radii.full,
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                {results.length} found
+              </span>
+            </div>
+            <span style={{ fontSize: 11, color: colors.textSubtle }}>
+              ↑↓ navigate • ↵ select
+            </span>
+          </div>
 
-                  return (
-                    <tr
-                      key={patient.Id || index}
-                      className={`uib-typeahead-match ${index === activeIndex ? 'active' : ''}`}
-                      style={{
-                        cursor: 'pointer',
-                        backgroundColor: index === activeIndex ? colors.primaryLight : 'transparent',
-                      }}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onClick={() => handleSelect(patient)}
-                      role="option"
-                    >
-                      <td className="td-title" style={{ ...typography.body, fontFamily: typography.fontFamily, color: colors.textMain, padding: `${spacing.xs} ${spacing.sm}`, borderColor: colors.border }}>{patient.TitleDesc}</td>
-                      <td className="td-name" style={{ ...typography.body, fontFamily: typography.fontFamily, color: colors.textMain, padding: `${spacing.xs} ${spacing.sm}`, borderColor: colors.border }}>{patient.PatientName}</td>
-                      <td className="td-dob" style={{ ...typography.body, fontFamily: typography.fontFamily, color: colors.textMain, padding: `${spacing.xs} ${spacing.sm}`, borderColor: colors.border, whiteSpace: 'nowrap' }}>{dobDisplay}</td>
-                      <td className="td-age" style={{ ...typography.body, fontFamily: typography.fontFamily, color: colors.textMain, padding: `${spacing.xs} ${spacing.sm}`, borderColor: colors.border }}>{patient.Age}/{patient.GenderCode}</td>
-                      <td className="td-mrn" style={{ ...typography.body, fontFamily: typography.fontFamily, color: colors.textMain, padding: `${spacing.xs} ${spacing.sm}`, borderColor: colors.border }}>{patient.MRN}</td>
-                      <td className="td-mrn" style={{ ...typography.body, fontFamily: typography.fontFamily, color: colors.textMain, padding: `${spacing.xs} ${spacing.sm}`, borderColor: colors.border }}>{patient.Mobile}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          {/* List Content */}
+          <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+            {isLoading && results.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: colors.textMuted, fontSize: 13 }}>
+                <Loading text="Searching patients..." size="sm" />
+              </div>
+            ) : results.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: colors.textMuted, fontSize: 13 }}>
+                No patients found matching your search.
+              </div>
+            ) : (
+              results.map((patient: any, index: number) => {
+                const isActive = index === activeIndex;
+                const isFemale = patient.GenderId === 2 || patient.GenderCode === 'F';
+                const avatarBg = isFemale ? '#fdf2f8' : '#eff6ff';
+                const avatarFg = isFemale ? '#db2777' : '#2563eb';
+                const initials = (patient.FirstName ? patient.FirstName[0] : '') + (patient.LastName ? patient.LastName[0] : '');
+                const due = Number(patient.OutStandingAmount || 0);
+                const mrn = patient.MRN || patient.PatientMrn || '—';
+                const name = `${patient.Title?.Description || patient.TitleDesc || ''} ${patient.FirstName || patient.PatientName || ''} ${patient.LastName || ''}`.trim();
+                const age = patient.Age ? (String(patient.Age).includes('Y') ? patient.Age : `${patient.Age}Y`) : '—';
+                const gender = patient.Gender?.Description || patient.GenderCode || (patient.GenderId === 1 ? 'M' : patient.GenderId === 2 ? 'F' : '—');
+
+                return (
+                  <div
+                    key={patient.Id || index}
+                    onClick={() => handleSelect(patient)}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      borderBottom: `1px solid ${colors.border}`,
+                      backgroundColor: isActive ? colors.primaryLight : colors.surface,
+                      borderLeft: isActive ? `3px solid ${colors.primary}` : '3px solid transparent',
+                      transition: 'background-color 0.12s ease',
+                    }}
+                  >
+                    {/* Left: Avatar + Details */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: radii.full,
+                          backgroundColor: avatarBg,
+                          color: avatarFg,
+                          fontWeight: 700,
+                          fontSize: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          border: `1px solid ${isFemale ? '#fbcfe8' : '#bfdbfe'}`,
+                        }}
+                      >
+                        {initials || <i className="fa-solid fa-user" style={{ fontSize: 11 }} />}
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: colors.textMain, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {name}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                          <span>
+                            <i className="fa-regular fa-user" style={{ fontSize: 10, marginRight: 4, color: colors.textSubtle }} />
+                            {age} • {gender}
+                          </span>
+                          {patient.Mobile && (
+                            <span>
+                              <i className="fa-solid fa-phone" style={{ fontSize: 10, marginRight: 4, color: colors.textSubtle }} />
+                              {patient.Mobile}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: MRN & Due */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0, marginLeft: 12 }}>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          fontFamily: 'monospace',
+                          padding: '3px 8px',
+                          borderRadius: radii.sm,
+                          backgroundColor: colors.primaryLight,
+                          color: colors.primary,
+                          border: '1px solid #bfdbfe',
+                        }}
+                      >
+                        {mrn}
+                      </span>
+                      {due > 0 ? (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: radii.sm,
+                            backgroundColor: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fecaca',
+                          }}
+                        >
+                          ₹{due.toLocaleString()} Due
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 10, color: '#10b981', fontWeight: 600 }}>
+                          <i className="fa-solid fa-check" style={{ fontSize: 9, marginRight: 3 }} />
+                          No Due
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: '8px 16px',
+              backgroundColor: colors.surfaceMuted,
+              borderTop: `1px solid ${colors.border}`,
+              fontSize: 11,
+              color: colors.textSubtle,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span>Tip: Type <strong>%%</strong> for all recent patients</span>
+            <span>ESC to dismiss</span>
+          </div>
         </div>
       )}
     </div>

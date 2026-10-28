@@ -148,6 +148,88 @@
             utl.Http.doAction(options);
         };
 
+        // -------------------------------------------------------------
+        // React Bridge integration for AdmissionRequestListScreen
+        // -------------------------------------------------------------
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                pageSize: vm.gridConfig.pagerObj.pageSize || 25,
+                currentfilter: {
+                    RequestedNo: $scope.currentfilter.RequestedNo,
+                    FromDate: $scope.currentfilter.FromDate,
+                    ToDate: $scope.currentfilter.ToDate,
+                    admissionstatusid: $scope.currentfilter.admissionstatusid,
+                    AdmissionRequestTypeId: $scope.currentfilter.AdmissionRequestTypeId
+                },
+                lookup: $scope.lookup || {}
+            };
+        };
+
+        var origGetListCallback = $scope.getListCallback;
+        $scope.getListCallback = function (scope, res, options, hasError) {
+            origGetListCallback(scope, res, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        var origLookupCallback = $scope.lookupCallback;
+        $scope.lookupCallback = function (scope, data, options, hasError) {
+            origLookupCallback(scope, data, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            payload = payload || {};
+            switch (actionName) {
+                case 'filterChange':
+                    if (payload.field) {
+                        $scope.currentfilter[payload.field] = payload.value;
+                    }
+                    $scope.refreshReactProps();
+                    break;
+                case 'filterChangeAndSearch':
+                    if (payload.field) {
+                        $scope.currentfilter[payload.field] = payload.value;
+                    }
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'search':
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'resetFilters':
+                    $scope.currentfilter.RequestedNo = '';
+                    $scope.currentfilter.FromDate = utl.Formatter.getCurrentDate();
+                    $scope.currentfilter.ToDate = utl.Formatter.getCurrentDate();
+                    $scope.currentfilter.admissionstatusid = 2;
+                    $scope.currentfilter.AdmissionRequestTypeId = -1;
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'pageChange':
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                    break;
+                case 'addNew':
+                    $scope.addNew();
+                    break;
+                case 'doctorDashboard':
+                    $scope.doctor_dashboard();
+                    break;
+                case 'edit':
+                    $scope.handleEvents('edit', payload);
+                    break;
+                case 'delete':
+                    $scope.handleEvents('delete', payload);
+                    break;
+                default:
+                    break;
+            }
+        };
+
         $scope.initLookup();
     }
 

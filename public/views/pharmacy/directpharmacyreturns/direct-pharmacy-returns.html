@@ -8,42 +8,41 @@
         float: inline-start;
     }
 </style>
-<div class="row">
-    <div class="drhms-filters">
-        <div class="col-sm-10">
-            <h4 translate="billing.pharmacy-return.pagetitle1.lbl"></h4>
+<link rel="stylesheet" href="css/pharmacy-pos-modern.css">
+<div class="pharmacy-modern-header">
+    <div class="pharmacy-title-area">
+        <div class="pharmacy-title-icon" style="background: #fee2e2; color: #dc2626;">
+            <i class="fas fa-undo-alt"></i>
         </div>
-        <div class="col-sm-6">
-            <ui-select class="col-sm-6" ng-model="currentfilter.StoreMasterId" tabindex="-1"
-                ng-disabled="RdoStoreMasterId" ng-change="StoreChange($select.selected)" name="storemaster">
-                <ui-select-match>
-                    {{$select.selected.Text | limitTo : 20 : 0}}
-                    <span ng-if="$select.selected.Text.length>20">...</span>
-                </ui-select-match>
-                <ui-select-choices
-                    repeat="lookupitem.Id as lookupitem in lookup.UserStores | filter: { Text: $select.search }">
-                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                </ui-select-choices>
-            </ui-select>
+        <div class="pharmacy-title-text">
+            <h4 translate="billing.pharmacy-return.pagetitle1.lbl">Direct Pharmacy Sales Returns</h4>
+            <span class="sub-badge" style="background: #fee2e2; color: #dc2626;">Patient Sales Credit & Refund</span>
         </div>
-        <div class="col-sm-4">
-            <button type="button" class="drhms-billing-btn drhms-add-btn" uib-tooltip="Add New (F7)"
-                tooltip-placement="bottom" ng-click="clear()">
-                <i class="fa fa-plus" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="drhms-billing-btn drhms-previousbill-btn" uib-tooltip="Previous Bills(F8)"
-                tooltip-placement="bottom" ng-if="IsNewBill" ng-click="findBill()">
-                <i class="fa fa-search-plus" aria-hidden="true"></i>
-            </button>
-
-            <button type="button" class="drhms-billing-btn drhms-outstandingbill-btn"
-                uib-tooltip="Previous Return Bills(F9)" tooltip-placement="bottom"
-                ng-if="HasAccess('DirectPharmacyReturn','PreviousReturnBtn')" ng-click="findReturn()">
-                <i class="fa fa-search-plus" aria-hidden="true"></i>
-            </button>
-            <span class="drhms-billing-btn drhms-home-btn" ng-if="Context =='pharmacy'"><i class="fas fa-home"
-                    ng-click="backtoList()" uib-tooltip="Dashboard" tooltip-placement="bottom"></i></span>
-        </div>
+    </div>
+    <div style="flex: 1 1 260px; max-width: 300px;">
+        <ui-select ng-model="currentfilter.StoreMasterId" tabindex="-1" ng-disabled="RdoStoreMasterId" ng-change="StoreChange($select.selected)" name="storemaster">
+            <ui-select-match placeholder="Select Return Store">
+                <i class="fas fa-store"></i> {{$select.selected.Text | limitTo : 20 : 0}}
+                <span ng-if="$select.selected.Text.length>20">...</span>
+            </ui-select-match>
+            <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.UserStores | filter: { Text: $select.search }">
+                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+            </ui-select-choices>
+        </ui-select>
+    </div>
+    <div class="pharmacy-action-btns">
+        <button type="button" class="pharmacy-btn-action" uib-tooltip="Previous Bills(F8)" tooltip-placement="bottom" ng-if="IsNewBill" ng-click="findBill()">
+            <i class="fa fa-search-plus" aria-hidden="true"></i> Find Bill (F8)
+        </button>
+        <button type="button" class="pharmacy-btn-action" uib-tooltip="Previous Return Bills(F9)" tooltip-placement="bottom" ng-if="HasAccess('DirectPharmacyReturn','PreviousReturnBtn')" ng-click="findReturn()">
+            <i class="fas fa-history" aria-hidden="true"></i> Past Returns (F9)
+        </button>
+        <button type="button" class="pharmacy-btn-action btn-primary-action" uib-tooltip="Add New (F7)" tooltip-placement="bottom" ng-click="clear()">
+            <i class="fa fa-plus" aria-hidden="true"></i> New Return (F7)
+        </button>
+        <button type="button" class="pharmacy-btn-action" ng-if="Context =='pharmacy'" ng-click="backtoList()" uib-tooltip="Dashboard" tooltip-placement="bottom">
+            <i class="fas fa-home"></i>
+        </button>
     </div>
 </div>
 <div class="col-sm-12" ng-if="item.ReturnNumber">

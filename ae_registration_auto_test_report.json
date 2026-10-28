@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-10-24T15:39:35.797Z",
+  "status": "PASSED",
+  "topApproveButton": {
+    "found": true,
+    "id": "btnSaveApproveTop",
+    "name": "btnSaveApproveTop",
+    "text": "Approve (Alt+A)",
+    "visible": true,
+    "disabled": false,
+    "style": {
+      "bg": "rgb(22, 163, 74)",
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  "bottomApproveButton": {
+    "found": true,
+    "id": "btnSaveApprove",
+    "name": "btnSaveApprove",
+    "text": "Approve (Alt+A)",
+    "visible": true,
+    "disabled": false,
+    "style": {
+      "bg": "rgb(22, 163, 74)",
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  "totalSelects": 2,
+  "selectNullWarnings": [],
+  "screenshotPath": "/Users/sharmila/.gemini/antigravity-ide/brain/369811d1-8628-48f0-8cde-2c8ae49d4743/ae_registration_auto_tested.png"
+}

@@ -110,6 +110,221 @@
             SequenceOptionId: 1,
         };
 
+        // =========================================================================
+        // REACT MODERNIZATION BRIDGE: PharmacyReturnScreen
+        // =========================================================================
+        $scope.refreshReactProps = function () {
+            var doUpdate = function () {
+                $scope.reactProps = {
+                    item: angular.copy($scope.item || {}),
+                    currentfilter: angular.copy($scope.currentfilter || {}),
+                    currentcontext: angular.copy($scope.currentcontext || {}),
+                    selectedPatient: angular.copy($scope.selectedPatient || {}),
+                    encounter: angular.copy($scope.encounter || {}),
+                    patientReturnDetails: angular.copy($scope.PatientReturnDetails || []),
+                    lookup: {
+                        PaymentType: ($scope.lookup && $scope.lookup.PaymentType) || [],
+                        Bank: ($scope.lookup && $scope.lookup.Bank) || [],
+                        CardType: ($scope.lookup && $scope.lookup.CardType) || [],
+                        DiscountMode: ($scope.lookup && $scope.lookup.DiscountMode) || [],
+                        UserStores: ($scope.lookup && $scope.lookup.UserStores) || [],
+                        PrivateDueApprover: ($scope.lookup && $scope.lookup.PrivateDueApprover) || [],
+                        Guarantor: ($scope.lookup && $scope.lookup.Guarantor) || []
+                    },
+                    privileges: {
+                        canSave: ($scope.HasAccess ? $scope.HasAccess('PharmacySales', 'PS_Save') : true) !== false,
+                        canSaveApprove: ($scope.HasAccess ? $scope.HasAccess('PharmacySales', 'PS_SaveApprove') : true) !== false,
+                    },
+                    flags: {
+                        canShowSaveBtn: $scope.canShowSaveBtn !== false,
+                        canShowSaveapproveBtn: $scope.canShowSaveapproveBtn !== false,
+                        canShowClearBtn: $scope.canShowClearBtn !== false,
+                        canShowCancelBtn: $scope.canShowCancelBtn,
+                        hidePrintBtn: $scope.HidePrintBtn,
+                        isApproved: $scope.item.PatientReturnStatusId === 3,
+                        isSaving: $scope.isSaving,
+                        context: $scope.Context || 'pharmacy'
+                    }
+                };
+            };
+            if ($scope.$$phase) {
+                doUpdate();
+            } else {
+                $scope.$evalAsync(doUpdate);
+            }
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            $scope.$evalAsync(function () {
+                switch (actionName) {
+                    case 'findBill':
+                        $scope.findBill();
+                        break;
+                    case 'findReturn':
+                        $scope.findReturn();
+                        break;
+                    case 'pickReturns':
+                        $scope.pickreturns();
+                        break;
+                    case 'clear':
+                        $scope.clear();
+                        break;
+                    case 'saveDraft':
+                        $scope.saveDraft();
+                        break;
+                    case 'saveAndApprove':
+                        $scope.saveAndApprove();
+                        break;
+                    case 'dmPrint':
+                        $scope.dmPrint();
+                        break;
+                    case 'printRefund':
+                        $scope.printref();
+                        break;
+                    case 'saleAndReturnPrint':
+                        $scope.saleandreturnprint();
+                        break;
+                    case 'print':
+                        $scope.print();
+                        break;
+                    case 'backToList':
+                        $scope.backtoList();
+                        break;
+                    case 'returnAllToggle':
+                        if (payload) {
+                            $scope.item.ReturnAll = !!payload.value;
+                            $scope.ReturnAll();
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'returnQtyChange':
+                        if (payload) {
+                            var targetIdx = -1;
+                            if (payload.index !== undefined && payload.index >= 0 && payload.index < $scope.PatientReturnDetails.length) {
+                                targetIdx = payload.index;
+                            } else if (payload.patientBillDetailId) {
+                                for (var rIdx = 0; rIdx < $scope.PatientReturnDetails.length; rIdx++) {
+                                    if ($scope.PatientReturnDetails[rIdx].PatientBillDetailId === payload.patientBillDetailId) {
+                                        targetIdx = rIdx;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (targetIdx >= 0 && $scope.PatientReturnDetails[targetIdx]) {
+                                var row = $scope.PatientReturnDetails[targetIdx];
+                                row.ReturnQuantity = payload.quantity;
+                                $scope.CalcualteAmt(row);
+                                $scope.refreshReactProps();
+                            }
+                        }
+                        break;
+                    case 'paymentTypeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.currentcontext.PaymentTypeId = payload.id;
+                            $scope.CalculateNetAmt();
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'receiptAmtChange':
+                        if (payload && payload.amount !== undefined) {
+                            $scope.currentcontext.ReceiptAmt = payload.amount;
+                            $scope.CalculateNetAmt();
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'bankChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.BankId = payload.id;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'cardTypeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.CardTypeId = payload.id;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'chequeNoChange':
+                        if (payload && payload.value !== undefined) {
+                            $scope.item.ChequeNo = payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'chequeDateChange':
+                        if (payload && payload.value !== undefined) {
+                            $scope.item.ChequeDate = payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'ddNumberChange':
+                        if (payload && payload.value !== undefined) {
+                            $scope.item.DDNumber = payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'ddDateChange':
+                        if (payload && payload.value !== undefined) {
+                            $scope.item.DDDate = payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'wireTransferIdChange':
+                        if (payload && payload.value !== undefined) {
+                            $scope.item.WireTransferId = payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'wireTransferDateChange':
+                        if (payload && payload.value !== undefined) {
+                            $scope.item.WireTransferDate = payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'authCodeChange':
+                        if (payload && payload.value !== undefined) {
+                            $scope.item.AuthorizeNumber = payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'creditApproverChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.PrivateDueId = payload.id;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'quickBillSearch':
+                        if (payload && payload.billNumber) {
+                            var bNum = String(payload.billNumber).trim();
+                            var inputData = {
+                                Params: [{
+                                    Key: 1,
+                                    Value: bNum
+                                }],
+                                PageContext: {
+                                    PageSize: 10,
+                                    PageNumber: 1
+                                }
+                            };
+                            utl.Http.doAction({
+                                action: 'billing/patientbills/GetPatientBills',
+                                data: inputData,
+                                type: 'post',
+                                onComplete: function (scope, res) {
+                                    var list = res.Data || [];
+                                    if (list.length > 0) {
+                                        $scope.currentcontext.id = list[0].Id;
+                                        $scope.getBillInfoByBillId();
+                                    } else {
+                                        utl.Alert.showErrorMsg('No sales bill found matching "' + bNum + '"');
+                                    }
+                                }
+                            });
+                        }
+                        break;
+                }
+            });
+        };
+
         $scope.EnableReturnWithComeRefund = function () {
             var flag = !$scope.item.ReturnWithComeRefund;
             $scope.currentcontext.RdoReceiptAmt = flag;
@@ -191,6 +406,9 @@
             if ($scope.PatientReturnInfo.length > 0 && $scope.item.PatientReturnStatusId == 3) {
                 $scope.RdoPaymentTypeId = false;
                 // $scope.item.ReturnWithComeRefund = false;
+            }
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
             }
         };
 
@@ -646,6 +864,9 @@
                 });
             }
 
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
             $('#pid').select();
             $('#pid').focus();
 
@@ -1459,6 +1680,9 @@
 
             $scope.item.Received = $scope.currentcontext.ReceiptAmt !== 0 ?
                 $scope.currentcontext.ReceiptAmt : $scope.currentcontext.RefundAmt !== 0 ? $scope.currentcontext.RefundAmt : 0;
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.updatereceiptamount = function () {
@@ -1485,6 +1709,9 @@
             } else {
                 $scope.currentcontext.ReceiptAmt = 0;
                 $scope.currentcontext.ReturnAmount = 0;
+            }
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
             }
         };
 
@@ -2082,6 +2309,9 @@
             });
 
             loadData();
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.initLookup = function () {
@@ -2782,6 +3012,14 @@
 
         $scope.getPharmacyPrintPreference();
         $scope.initLookup();
+
+        if ($stateParams.id && parseInt($stateParams.id) > 0) {
+            $scope.currentcontext.id = parseInt($stateParams.id);
+            $scope.getReturnInfoByReturnId();
+        }
+        if (typeof $scope.refreshReactProps === 'function') {
+            $scope.refreshReactProps();
+        }
 
         /* Pharmacy  Return - Shortcut Keys - Start */
         function keyupHandler(e) {

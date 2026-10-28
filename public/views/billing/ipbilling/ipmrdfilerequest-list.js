@@ -22,12 +22,11 @@
         };
 
         $scope.getList = function () {
-            if ($scope.currentfilter.PatientName) {
+            if ($scope.currentfilter.PatientName || $scope.currentfilter.VisitNo) {
                 var FromDate = $filter('date')($scope.currentfilter.RequestDate, 'yyyy-MM-dd 00:00:00') || null;
                 var ToDate = $filter('date')($scope.currentfilter.RequestDate, 'yyyy-MM-dd 23:59:59') || null;
 
                 var inputData = {
-
                     Params: [
                         {
                             Key: 1,
@@ -48,21 +47,22 @@
                         PageSize: vm.gridConfig.pagerObj.pageSize,
                         PageNumber: vm.gridConfig.pagerObj.currentPage
                     }
-                }
+                };
+
+                var options = {
+                    action: 'IPManagement/MRDFiles/GetMRDFiless',
+                    data: inputData,
+                    type: 'post',
+                    onComplete: $scope.getListCallback
+                };
+
+                utl.Http.doAction(options);
             }
             else {
-                utl.Alert.showErrorMsg('Please Select Patient');
-                return true;
+                vm.gridConfig.data = [];
+                vm.gridConfig.pagerObj.totalItems = 0;
+                $scope.refreshReactProps();
             }
-            var options = {
-                action: 'IPManagement/MRDFiles/GetMRDFiless',
-                data: inputData,
-                type: 'post',
-                onComplete: $scope.getListCallback
-            };
-
-            utl.Http.doAction(options);
-
         };
 
         //Grid Actions
@@ -88,94 +88,60 @@
 
         $scope.handleEvents = function (actionType, entity) {
             if (actionType == 'filerequest') {
-                // utl.Session.setEMRPatientId(entity.PatientId);
                 $state.go('app.ipmrdfilerequestform', {
                     mid: entity.Id,
                 });
             } else if (actionType == 'patientinfo') {
-                // $scope.patientprofiledetails(entity.Patient.Id);
-                utl.Modal.open('registration.patientprofile', {
-                    params: {
-                        pid: entity.PatientId
-                    },
-                    confirmCallback: $scope.getitem
-                });
-            }
-        }
-
-
-
-        //React bridge: renders this screen's status filter through the shared
-        //BridgeLookupSelectScreen and its <custom-table config="vm.gridConfig">
-        //through the shared BridgeGridScreen. Cell text is formatted here with
-        //the same $filter('date', ...) calls the original cellTemplates used,
-        //so no formatting logic moves into React. Every dispatch lands back on
-        //this controller's existing, unchanged functions.
-            function patientLabel(p) {
-                if (!p) { return ''; }
-                var title = p.Title && p.Title.Description ? p.Title.Description + ' ' : '';
-                return (title + (p.FirstName || '') + ' ' + (p.LastName || '') + ' / ' + (p.MRN || '') + ' / ' + (p.Age || '') + ' / ' + (p.Gender && p.Gender.Description ? p.Gender.Description : '')).trim();
-            }
-
-        $scope.handleGridAction = function (actionType, payload) {
-            var items = vm.gridConfig.data || [];
-            var entity = null;
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].Id === payload.id) { entity = items[i]; break; }
-            }
-            if (actionType == 'rowAction') {
-                $scope.handleEvents('filerequest', entity);
-            } else if (actionType == 'cellAction') {
-                $scope.handleEvents('patientinfo', entity);
+                var pid = entity && (entity.PatientId || (entity.Patient && entity.Patient.Id));
+                if (pid) {
+                    utl.Modal.open('registration.patientprofile', {
+                        params: {
+                            pid: pid
+                        },
+                        confirmCallback: $scope.getList
+                    });
+                }
             }
         };
 
-        $scope.handleFilterAction = function (actionType, payload) {
-            if (actionType == 'change') {
-                $scope.currentfilter.MRDIPFileStatusId = payload.id;
+        $scope.handleReactAction = function (actionType, payload) {
+            if (actionType === 'filerequest') {
+                var entity = (payload && (payload.entity || payload)) || null;
+                if (entity) {
+                    $scope.handleEvents('filerequest', entity);
+                }
+            } else if (actionType === 'patientinfo') {
+                var entity = (payload && (payload.entity || payload)) || null;
+                if (entity) {
+                    $scope.handleEvents('patientinfo', entity);
+                }
+            } else if (actionType === 'filterChange') {
+                if (payload && payload.field) {
+                    $scope.currentfilter[payload.field] = payload.value;
+                }
+            } else if (actionType === 'search') {
+                vm.gridConfig.pagerObj.currentPage = 1;
                 $scope.getList();
+            } else if (actionType === 'pageChange') {
+                if (payload && payload.page) {
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                }
             }
         };
 
         $scope.refreshReactProps = function () {
-            var defs = vm.gridConfig.columnDefs || [];
-            function hdr(i) { return defs[i] ? defs[i].displayName : ''; }
-            var items = vm.gridConfig.data || [];
-            $scope.reactPropsGridContainer = {
-                reactProps: {
-                    columns: [
-                    { key: '__sno', header: hdr(0), width: '60px' },
-                    { key: 'returndate', header: hdr(1), sortable: true },
-                    { key: 'visitno', header: hdr(2), sortable: true },
-                    { key: 'patient', header: hdr(3), link: true },
-                    { key: 'doctorname', header: hdr(4), sortable: true },
-                    { key: 'status', header: hdr(5), sortable: true }
-                ],
-                    actionsHeader: defs.length ? defs[defs.length - 1].displayName : 'Actions',
-                    hasActions: true,
-                    rows: items.map(function (entity) {
-                        return {
-                            id: entity.Id,
-                            actionLabel: 'File Request',
-                            cells: {
-                        returndate: (entity.ReturnDate ? $filter('date')(entity.ReturnDate, 'dd-MMM-yyyy') : '') + ' ' + (entity.AdmissionDate ? $filter('date')(entity.AdmissionDate, 'HH:mm') : ''),
-                        visitno: entity.VisitNo,
-                        patient: patientLabel(entity.Patient, true),
-                        doctorname: entity.DoctorName,
-                        status: entity.MRDIPFileStatus && entity.MRDIPFileStatus.Description
-                    }
-                        };
-                    })
-                },
-                onAction: $scope.handleGridAction
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter || {},
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
             };
-            $scope.reactPropsFilterContainer = {
-                reactProps: {
-                    options: ($scope.lookup && $scope.lookup.MRDIPFileStatus) || [],
-                    value: $scope.currentfilter.MRDIPFileStatusId
-                },
-                onAction: $scope.handleFilterAction
-            };
+            $scope.$applyAsync();
         };
 
         vm.gridConfig = {
@@ -286,8 +252,8 @@
 
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
-            // $scope.getList();
-        }
+            $scope.refreshReactProps();
+        };
 
         $scope.initLookup = function () {
             var inputData = [

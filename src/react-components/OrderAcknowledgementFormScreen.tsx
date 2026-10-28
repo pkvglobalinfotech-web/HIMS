@@ -194,8 +194,8 @@ export const OrderAcknowledgementFormScreen: React.FC<OrderAcknowledgementFormSc
     isAllFinalized ||
     (orderList.length > 0 && activeSelectableItems.length === 0) ||
     canDisable ||
-    orderInfo?.OrderStatusId === 10 ||
-    orderInfo?.OrderStatusId === 2
+    (orderInfo as any)?.OrderStatusId === 10 ||
+    (orderInfo as any)?.OrderStatusId === 2
   );
   const canShowAcceptButton = (reactProps?.canShowAccept ?? true) && !canDisable && !isOrderAccepted && activeSelectableItems.length > 0;
   const canAccept = canShowAcceptButton && selectedCount > 0;

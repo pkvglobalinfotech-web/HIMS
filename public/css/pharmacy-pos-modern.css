@@ -1,0 +1,268 @@
+/* MediFlow Modern Pharmacy POS & Returns Design System */
+
+.pharmacy-pos-container {
+    padding: 16px 20px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Modern Header Bar */
+.pharmacy-modern-header {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.pharmacy-title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pharmacy-title-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #e0f2fe;
+    color: #0284c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.pharmacy-title-text h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.pharmacy-title-text .sub-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #475569;
+    margin-top: 2px;
+}
+
+.pharmacy-action-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pharmacy-btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.pharmacy-btn-action:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.pharmacy-btn-action.btn-primary-action {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+}
+
+.pharmacy-btn-action.btn-primary-action:hover {
+    background: #0369a1;
+}
+
+/* Patient Info Card */
+.pharmacy-patient-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 16px;
+}
+
+.pharmacy-card-header {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pharmacy-card-header i {
+    color: #0284c7;
+}
+
+/* Form Controls in Card */
+.drhms-table-top-header {
+    background: #ffffff !important;
+    border: none !important;
+}
+
+.drhms-table-head-border {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px;
+    padding: 12px 10px;
+    margin-bottom: 8px;
+}
+
+.drhms-table-head-border label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.drhms-table-head-border input.form-control,
+.drhms-table-head-border .ui-select-container {
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.85rem;
+    background-color: #ffffff;
+    box-shadow: none;
+}
+
+.drhms-table-head-border input.form-control:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+/* Medicine Search Row */
+.pharmacy-search-bar-row {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Modern Data Table */
+.drhms-table-responsive-height {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.drhms-responsive-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.drhms-responsive-table thead.bg-subhead {
+    background: #f1f5f9 !important;
+}
+
+.drhms-responsive-table thead th {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.drhms-responsive-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+}
+
+.drhms-responsive-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.drhms-responsive-table tbody td {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+/* Modern Batch & Expiry Badges */
+.pharmabatch_id {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+.expirystop {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+    font-weight: 700;
+    font-size: 0.78rem;
+}
+
+/* Bottom Financial Summary Card */
+.footerbar {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+table#bannerdetails.foot {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    width: 100%;
+}
+
+table#bannerdetails.foot tr td {
+    padding: 8px 12px;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+table#bannerdetails.foot tr:last-child {
+    background: #0284c715;
+}
+
+table#bannerdetails.foot tr:last-child td {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #0369a1;
+    border-bottom: none;
+}

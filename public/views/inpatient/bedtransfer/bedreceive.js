@@ -29,6 +29,7 @@
         $scope.getListCallback = function(scope, res, options, hasError) {
             vm.gridConfig.data = res.Data;
             vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            $scope.refreshReactProps();
         };
 
         $scope.getList = function() {
@@ -36,18 +37,14 @@
             var From = $filter('date')($scope.currentfilter.TransferDate, 'yyyy-MM-dd 00:00:00') || null;
             var To = $filter('date')($scope.currentfilter.TransferDate, 'yyyy-MM-dd 23:59:59') || null;
 
-            // if ($scope.advancedfilter.From || $scope.advancedfilter.To) {
-            //     $scope.currentfilter.RequestDate = '';
-            // }
             var inputData = {
                 Params: [{
                         Key: 1,
                         Value: $scope.currentfilter.patientnamemrn
                     },
-                    // { Key: 3, Value: $scope.currentfilter.PatientId },
                     {
                         Key: 2,
-                        Value: $scope.currentfilter.FromWardId
+                        Value: $scope.currentfilter.FromWardId === -1 ? null : $scope.currentfilter.FromWardId
                     },
                     {
                         Key: 18,
@@ -71,14 +68,12 @@
                     },
                     {
                         Key: 20,
-                        Value: $scope.currentfilter.ReceivedStatusId
+                        Value: $scope.currentfilter.ReceivedStatusId === -1 ? null : $scope.currentfilter.ReceivedStatusId
                     },
                     {
                         Key: 16,
                         Value: utl.Session.getCurrentFacilityId()
                     },
-
-
                 ],
                 PageContext: {
                     PageSize: vm.gridConfig.pagerObj.pageSize,
@@ -139,8 +134,65 @@
                     itemId: entity
                 };
                 utl.Dialog.confirmMessage(confirmOptions);
+            } else if (actionType == 'patientinfo') {
+                var pid = entity && (entity.PatientId || (entity.Patient && entity.Patient.Id));
+                if (pid) {
+                    utl.Modal.open('registration.patientprofile', {
+                        params: { pid: pid },
+                        confirmCallback: $scope.getList
+                    });
+                }
             }
-        }
+        };
+
+        $scope.handleReactAction = function (actionType, payload) {
+            var items = vm.gridConfig.data || [];
+            var entity = null;
+            var targetId = payload && (payload.id || (payload.entity && payload.entity.Id));
+            if (targetId) {
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].Id === targetId) { entity = items[i]; break; }
+                }
+            } else if (payload && payload.entity) {
+                entity = payload.entity;
+            }
+
+            if (actionType === 'receive') {
+                if (entity) {
+                    receiveBed(entity);
+                }
+            } else if (actionType === 'patientinfo') {
+                if (entity) {
+                    $scope.handleEvents('patientinfo', entity);
+                }
+            } else if (actionType === 'filterChange') {
+                if (payload && payload.field) {
+                    $scope.currentfilter[payload.field] = payload.value;
+                }
+            } else if (actionType === 'search') {
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            } else if (actionType === 'pageChange') {
+                if (payload && payload.page) {
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                }
+            }
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter || {},
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
+            };
+            $scope.$applyAsync();
+        };
 
         vm.gridConfig = {
             enableColumnResizing: true,
@@ -226,10 +278,13 @@
             }
         };
 
+        $scope.refreshReactProps();
+
         $scope.lookupCallback = function(scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getList();
-        }
+        };
 
         $scope.initLookup = function() {
             var inputData = [{

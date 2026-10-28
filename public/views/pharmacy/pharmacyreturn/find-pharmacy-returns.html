@@ -1,32 +1,29 @@
-    <div class="modal-header custom-modal-header">
-        <div class="col-sm-6">
-            <h4 class="modal-title custom-modal-title" translate="billing.pharmacy-return.findpharmacyreturn.lbl"></h4>
-        </div>
-        <div class="col-sm-6">
-            <div class="filters">
-                <img src="../../../../../assets/svg/close.svg" ng-click="cancelCallback()">
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="dynamicform-content">
-            <dynamicform modeldata="modeldata" schema="schema"></dynamicform>
-            <div class="form-group col-sm-3">
-                <button type="button" class="draftbutton  {{action.cls}}" ng-repeat="action in schema.actions"
-                    ng-click="actionClick(action.type)" translate="{{action.translate}}"></button>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <custom-table config="vm.gridConfig"></custom-table>
-        <div class="pull-right" style="margin-bottom: 10px;">
-            Total Return Amount: <strong>{{currentcontext.TotalReturnAmount | displaycurrency}}</strong>
-        </div>
-    </div>
-    <div class="">
-        <div class="row">
-            <ul uib-pagination total-items="vm.gridConfig.pagerObj.totalItems"
-                items-per-page="vm.gridConfig.pagerObj.pageSize" start-index="vm.gridConfig.pagerObj.startIndex"
-                ng-model="vm.gridConfig.pagerObj.currentPage" ng-change="getList()"></ul>
-        </div>
-    </div>
+<!--
+  Migrated to React: PharmacyPreviousReturnsModal
+  Modern Mediflow design system for Pharmacy Previous Returns search modal.
+  Provides rapid date presets, live filters, reactive data table, and instant return voucher picker.
+-->
+<style>
+  /* Enhance the AngularJS modal container for a clean, modern floating card look */
+  .modal-dialog.modal-lg,
+  .modal-dialog {
+    max-width: 1100px !important;
+    width: 95% !important;
+    margin: 24px auto !important;
+  }
+  .modal-dialog.modal-lg .modal-content,
+  .modal-dialog .modal-content {
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(148, 163, 184, 0.25) !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+</style>
+<div class="pharmacy-previous-returns-modal-root" style="width: 100%;">
+    <react-component 
+        name="PharmacyPreviousReturnsModal" 
+        props="{ reactProps: reactProps, onAction: handleReactAction }">
+    </react-component>
+</div>

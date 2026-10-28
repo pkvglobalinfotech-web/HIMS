@@ -17,6 +17,7 @@
         $scope.getListCallback = function (scope, res, options, hasError) {
             vm.gridConfig.data = res.Data;
             vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            $scope.refreshReactProps();
         };
 
         $scope.getList = function () {
@@ -95,8 +96,59 @@
         $scope.handleEvents = function (actionType, entity) {
             if (actionType == 'view') {
                 $scope.openModal(entity.Id);
+            } else if (actionType == 'patientinfo') {
+                var pid = entity && (entity.PatientId || (entity.Patient && entity.Patient.Id));
+                if (pid) {
+                    utl.Modal.open('registration.patientprofile', {
+                        params: {
+                            pid: pid
+                        },
+                        confirmCallback: $scope.getList
+                    });
+                }
             }
-        }
+        };
+
+        $scope.handleReactAction = function (actionType, payload) {
+            if (actionType === 'view') {
+                var entity = (payload && (payload.entity || payload)) || null;
+                var id = entity ? entity.Id : (payload && payload.id ? payload.id : 0);
+                $scope.openModal(id);
+            } else if (actionType === 'addNew') {
+                $scope.addNew();
+            } else if (actionType === 'patientinfo') {
+                var entity = (payload && (payload.entity || payload)) || null;
+                if (entity) {
+                    $scope.handleEvents('patientinfo', entity);
+                }
+            } else if (actionType === 'filterChange') {
+                if (payload && payload.field) {
+                    $scope.currentfilter[payload.field] = payload.value;
+                }
+            } else if (actionType === 'search') {
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            } else if (actionType === 'pageChange') {
+                if (payload && payload.page) {
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                }
+            }
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter || {},
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
+            };
+            $scope.$applyAsync();
+        };
 
         vm.gridConfig = {
             enableColumnResizing: true,
@@ -119,27 +171,6 @@
                     field: "PatientName",
                     displayName: $translate.instant('Patient Name')
                 },
-                // {
-                //     field: "Patient",
-                //     displayName: $translate.instant('medicalcertificate.dischargesummary-list.patientname.lbl'),
-                //     cellTemplate: "<div class='ui-grid-cell-contents'>"
-                //         // + '<a ng-click="handleEvents(\'patientinfo\',entity)" uib-tooltip="{{entity.Patient.Title.Description}} ' + '{{entity.Patient.FirstName }} '
-                //         // + '{{entity.Patient.LastName}} | ' + '{{entity.Patient.MRN}} | ' + '{{entity.Patient.Age}} | ' + '{{entity.Patient.Gender.Description}}" tooltip-placement="bottom" >'
-                //         +
-                //         '<a ng-click="handleEvents(\'patientinfo\',entity)">' +
-                //         "<span ng-if='entity.Patient.Title && entity.Patient.Title.Description' >" +
-                //         "<b>{{entity.Patient.Title.Description}}</b>&nbsp;</span>" +
-                //         "<span ><b>{{entity.Patient.FirstName}}</b>&nbsp;</span>" +
-                //         "<span >{{entity.Patient.LastName}}&nbsp;</span>" +
-                //         "<span >/</span>" +
-                //         "<span >{{entity.Patient.MRN}}&nbsp;</span>" +
-                //         "<span >/<span>" +
-                //         "<span >{{entity.Patient.Age}}&nbsp;</span>" +
-                //         "<span >/</span>" +
-                //         "<span >{{entity.Patient.Gender.Description}}</span>" +
-                //         "</a></div>",
-                //     handleEvent: $scope.handleEvents
-                // },
                 {
                     field: "WardRoomMaster", displayName: $translate.instant('Ward/Rooms'),
                     cellTemplate: "<div class='ui-grid-cell-contents'>"
@@ -183,10 +214,13 @@
             }
         };
 
+        $scope.refreshReactProps();
+
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getList();
-        }
+        };
 
         $scope.initLookup = function () {
             var inputData = [{

@@ -234,12 +234,9 @@ export const LisRegistrationScreen: React.FC<LisRegistrationScreenProps> = ({
     }
     setIsSearchingPatient(true);
     try {
-      const res = await apiFetch({
-        action: 'Registration/PatientSearch/Search',
-        data: {
-          SearchCriteria: query,
-          PageContext: { PageSize: 10, PageNumber: 1 },
-        },
+      const res = await apiFetch<any>('registration/patient/GetPatients', {
+        Params: [{ Key: 0, Value: query }],
+        PageContext: { PageSize: 10, PageNumber: 1 },
       });
       if (res && res.Data) {
         setPatientSearchResults(res.Data);

@@ -80,34 +80,41 @@
     z-index: 10000;
 }
 </style>
-<div class="row">
-    <div class="drhms-filters">
-        <div class="col-sm-10">
-            <h4 translate="Direct Pharmacy Sales"></h4>
+<link rel="stylesheet" href="css/pharmacy-pos-modern.css">
+<div class="pharmacy-modern-header">
+    <div class="pharmacy-title-area">
+        <div class="pharmacy-title-icon">
+            <i class="fas fa-prescription-bottle-alt"></i>
         </div>
-        <div class="col-sm-6">
-            <ui-select class="col-sm-4" ng-model="currentfilter.StoreMasterId" tabindex="-1" ng-disabled="RdoStoreMasterId" ng-change="StoreChange($select.selected)" name="storemaster">
-                <ui-select-match>
-                    {{$select.selected.Text | limitTo : 25 : 0}}
-                    <span ng-if="$select.selected.Text.length>25">...</span>
-                </ui-select-match>
-                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.UserStores | filter: { Text: $select.search }">
-                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                </ui-select-choices>
-            </ui-select>
+        <div class="pharmacy-title-text">
+            <h4 translate="Direct Pharmacy Sales">Direct Pharmacy Sales</h4>
+            <span class="sub-badge">OTC & Walk-in Patient Dispensing</span>
         </div>
-        <div class="col-sm-4">
-            <button type="button" class="drhms-billing-btn drhms-previousbill-btn" uib-tooltip="{{'Previous Bills' | translate }}" tooltip-placement="bottom" ng-click="findBill()">
-                <i class="fa fa-search-plus" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="drhms-billing-btn drhms-outstandingbill-btn" uib-tooltip="{{'billing.b2bbilling-form.outstanding.lbl' | translate }}" tooltip-placement="bottom" ng-click="outstandingBill()">D
-            </button>
-            <button type="button" class="drhms-billing-btn drhms-add-btn" uib-tooltip="Add New" tooltip-placement="bottom" ng-click="clear()">
-                <i class="fa fa-plus" aria-hidden="true"></i>
-            </button>
-            <span class="drhms-billing-btn drhms-home-btn"><i class="fas fa-home" ng-click="backtoList()"
-                    uib-tooltip="Dashboard" tooltip-placement="bottom"></i></span>
-        </div>
+    </div>
+    <div style="flex: 1 1 280px; max-width: 320px;">
+        <ui-select ng-model="currentfilter.StoreMasterId" tabindex="-1" ng-disabled="RdoStoreMasterId" ng-change="StoreChange($select.selected)" name="storemaster">
+            <ui-select-match placeholder="Select Dispensing Store">
+                <i class="fas fa-store"></i> {{$select.selected.Text | limitTo : 25 : 0}}
+                <span ng-if="$select.selected.Text.length>25">...</span>
+            </ui-select-match>
+            <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.UserStores | filter: { Text: $select.search }">
+                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+            </ui-select-choices>
+        </ui-select>
+    </div>
+    <div class="pharmacy-action-btns">
+        <button type="button" class="pharmacy-btn-action" uib-tooltip="{{'Previous Bills' | translate }}" tooltip-placement="bottom" ng-click="findBill()">
+            <i class="fa fa-search-plus" aria-hidden="true"></i> Previous Bills (F8)
+        </button>
+        <button type="button" class="pharmacy-btn-action" uib-tooltip="{{'billing.b2bbilling-form.outstanding.lbl' | translate }}" tooltip-placement="bottom" ng-click="outstandingBill()">
+            <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Outstanding (F9)
+        </button>
+        <button type="button" class="pharmacy-btn-action btn-primary-action" uib-tooltip="Add New Sale" tooltip-placement="bottom" ng-click="clear()">
+            <i class="fa fa-plus" aria-hidden="true"></i> New Sale (F7)
+        </button>
+        <button type="button" class="pharmacy-btn-action" ng-click="backtoList()" uib-tooltip="Pharmacy Dashboard" tooltip-placement="bottom">
+            <i class="fas fa-home"></i>
+        </button>
     </div>
 </div>
 <div class="col-sm-12" ng-if="item.BillNumber">

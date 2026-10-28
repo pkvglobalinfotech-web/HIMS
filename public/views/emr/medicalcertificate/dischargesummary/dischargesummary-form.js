@@ -75,6 +75,72 @@
             }
         }
 
+        $scope.refreshReactProps = function() {
+            $scope.reactProps = {
+                item: $scope.item,
+                currentcontext: $scope.currentcontext,
+                lookup: $scope.lookup,
+                CreatedBy: $scope.CreatedBy,
+                AprovedBy: $scope.AprovedBy,
+                canShowSaveBtn: $scope.canShowSaveBtn,
+                canShowSaveactiveBtn: $scope.canShowSaveactiveBtn,
+                canShowSaveandApproveBtn: $scope.canShowSaveandApproveBtn,
+                canprintBtn: $scope.canprintBtn,
+                canShowreverseBtn: $scope.canShowreverseBtn,
+                canShowrelesedBtn: $scope.canShowrelesedBtn
+            };
+        };
+
+        $scope.handleReactAction = function(action, payload) {
+            if (action === 'back') {
+                $scope.backToList();
+            } else if (action === 'save') {
+                $scope.save();
+            } else if (action === 'saveandactive') {
+                $scope.saveandActive();
+            } else if (action === 'approve') {
+                $scope.approve();
+            } else if (action === 'reverse') {
+                $scope.reverse();
+            } else if (action === 'release') {
+                $scope.releasedtopatient();
+            } else if (action === 'printWithHeader') {
+                $scope.print();
+            } else if (action === 'printWithoutHeader') {
+                $scope.print2();
+            } else if (action === 'labresult') {
+                $scope.labresult();
+            } else if (action === 'radiologyresult') {
+                $scope.radiologyresult();
+            } else if (action === 'patientChange') {
+                $scope.item.SelectedItem = payload;
+                $scope.patientChanged();
+            } else if (action === 'contentChange') {
+                $scope.$evalAsync(function() {
+                    $scope.item.DataTemplate = payload;
+                });
+            } else if (action === 'dischargeTypeChange') {
+                $scope.$evalAsync(function() {
+                    $scope.item.DischargeTypeId = payload;
+                    $scope.refreshReactProps();
+                });
+            } else if (action === 'dischargeDateChange') {
+                $scope.$evalAsync(function() {
+                    $scope.item.DischargeDate = payload;
+                    $scope.refreshReactProps();
+                });
+            } else if (action === 'deathDateChange') {
+                $scope.$evalAsync(function() {
+                    $scope.item.DeathDate = payload;
+                    $scope.refreshReactProps();
+                });
+            } else if (action === 'templateChange') {
+                $scope.item.NoteTemplateId = payload;
+                $scope.onNoteTemplateChange();
+            }
+        };
+
+        $scope.refreshReactProps();
 
         $scope.backToList = function() {
             if ($scope.context == 'main') {
@@ -378,6 +444,7 @@
             if ($scope.currentcontext.id == 0 || !$scope.currentcontext.id) {
                 $scope.getPrevPatCertByPatId();
             }
+            $scope.refreshReactProps();
         }
 
         $scope.EncInfoCallBack = function(scope, res, options, hasError) {
@@ -774,19 +841,8 @@
                 $scope.canphysicaldischargeBtn = true;
                 $scope.canShowrelesedBtn = false;
             }
-            // if ($scope.item.CertificateStatusId == 6) {
-            //     $scope.canShowSaveBtn = false;
-            //     $scope.canhistoryBtn = true;
-            //     $scope.canShowPrescribeOrderBtn = false;
-            //     $scope.canShowClearBtn = false;
-            //     $scope.canShowSaveandApproveBtn = false;
-            //     $scope.canShowCancelBtn = true;
-            //     $scope.canprintBtn = true;
-            //     $scope.canShowViewReceipt = true;
-            // }
-            // }
 
-
+            $scope.refreshReactProps();
         }
 
         if ($scope.currentcontext.id <= 0)
@@ -828,6 +884,7 @@
         //GetNoteTemplateById
         $scope.getNoteTemplateByIdCallback = function(scope, data, options, hasError) {
             $scope.item.DataTemplate = data.DataTemplate;
+            $scope.refreshReactProps();
         };
         $scope.onNoteTemplateChange = function() {
             var options = {
@@ -1368,6 +1425,7 @@
         //lookup
         $scope.lookupCallback = function(scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getItem();
         }
 

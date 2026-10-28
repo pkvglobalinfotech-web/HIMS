@@ -4223,6 +4223,9 @@
             /*A&E */
             .state('app.aeregistration', {
                 url: '/AccidentEmergency',
+                params: {
+                    id: { value: null, squash: true }
+                },
                 title: 'Accident & Emergency',
                 templateUrl: helper.basepath('emr/accidentemergency/aepatientregistration/aepatientregistration.html'),
                 controller: 'aepatientRegistrationController as vm',
@@ -4234,6 +4237,9 @@
             })
             .state('app.aedashboard', {
                 url: '/aedashboard',
+                params: {
+                    id: { value: null, squash: true }
+                },
                 title: 'Accident & Emergency',
                 templateUrl: helper.basepath('emr/accidentemergency/dashboard/aedashboard.html'),
                 controller: 'AEDashboardController as vm',
@@ -4789,6 +4795,9 @@
             /*Surgery Management*/
             .state('app.surgerydashboard', {
                 url: '/surgerydashboard/:id',
+                params: {
+                    id: { value: null, squash: true }
+                },
                 title: 'Surgery Dashboard',
                 templateUrl: helper.basepath('emr/surgerymanagement/surgerydashboard/surgerydashboard.html'),
                 controller: 'SurgeryDashboardController as vm',
@@ -5147,6 +5156,9 @@
             })
             .state('app.surgeryroommaster', {
                 url: '/surgeryroommaster/:id',
+                params: {
+                    id: { value: null, squash: true }
+                },
                 title: 'Surgery Room Master',
                 templateUrl: helper.basepath('emr/surgerymanagement/surgeryroommaster/surgeryroommaster-list.html'),
                 controller: 'surgeryroommasterController as vm',
@@ -5306,6 +5318,17 @@
             })
             .state('app.surgeryschedules', {
                 url: 'surgerymanagement/surgeryschedule',
+                title: 'Surgery Schedule',
+                templateUrl: helper.basepath('emr/surgerymanagement/surgeryschedule/surgeryschedule-list.html'),
+                controller: 'surgeryscheduleListController as vm',
+                resolve: {
+                    loadCtrl: ['$ocLazyLoad', function ($ocLazyLoad) {
+                        return $ocLazyLoad.load(helper.basepath('emr/surgerymanagement/surgeryschedule/surgeryschedule-list.js'));
+                    }]
+                }
+            })
+            .state('app.surgeryschedules-slash', {
+                url: '/surgerymanagement/surgeryschedule',
                 title: 'Surgery Schedule',
                 templateUrl: helper.basepath('emr/surgerymanagement/surgeryschedule/surgeryschedule-list.html'),
                 controller: 'surgeryscheduleListController as vm',
@@ -8448,6 +8471,7 @@
                 templateUrl: helper.basepath('emr/medicalcertificate/dischargesummary/dischargesummary-form.html'),
                 controller: 'dischargesummaryFormController as vm',
                 params: {
+                    id: { value: null, squash: true },
                     eid: 0,
                     pid: 0,
                     context: 'summary'
@@ -13339,6 +13363,7 @@
             .state('app.bedmanagement', {
                 url: '/bedmanagement/:id',
                 params: {
+                    id: { value: null, squash: true },
                     tp: 'ip'
                 },
                 title: 'Bed Management',

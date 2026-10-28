@@ -92,6 +92,9 @@
                 $scope.Items.admissionrequestcount = '0';
             if (!$scope.Items.physiotheraphycount)
                 $scope.Items.physiotheraphycount = '0';
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
         };
         $scope.getddCount = function() {
             var inputData = {
@@ -159,7 +162,10 @@
                 }
                 $scope.dischargedlist.push(dislist);
             }
-        }
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
+        };
 
         $scope.getDischargeNoticedList = function() {
             var FromDate = $filter('date')(utl.Formatter.getCurrentDate(), 'yyyy-MM-dd 00:00:00');
@@ -183,7 +189,7 @@
                     }
                 ],
                 PageContext: {
-                    PageSize: 3,
+                    PageSize: 10,
                     PageNumber: 1
                 }
             };
@@ -216,7 +222,10 @@
                 }
                 $scope.admissionlist.push(admlist);
             }
-        }
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
+        };
 
         $scope.getAdmissionNoticedList = function() {
             var FromDate = $filter('date')(utl.Formatter.getCurrentDate(), 'yyyy-MM-dd 00:00:00');
@@ -333,8 +342,10 @@
                 }
                 $scope.TodayPendingList.push(pendinglist);
             }
-
-        }
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
+        };
 
         $scope.tdyPendingPatList = function() {
             var FromDate = $filter('date')(utl.Formatter.getCurrentDate(), 'yyyy-MM-dd 00:00:00');
@@ -365,7 +376,7 @@
                     }
                 ],
                 PageContext: {
-                    PageSize: 5,
+                    PageSize: 10,
                     PageNumber: 1
                 }
             };
@@ -398,7 +409,10 @@
                 }
                 $scope.TodayCompletedList.push(completedlist);
             }
-        }
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
+        };
 
         $scope.tdyCompletedPatList = function() {
             var FromDate = $filter('date')(utl.Formatter.getCurrentDate(), 'yyyy-MM-dd 00:00:00');
@@ -429,7 +443,7 @@
                     }
                 ],
                 PageContext: {
-                    PageSize: 5,
+                    PageSize: 10,
                     PageNumber: 1
                 }
             };
@@ -462,6 +476,9 @@
                 }
                 $scope.ScheduleList.push(schedule);
             }
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
         };
         $scope.getSurgeryScheduleList = function() {
             var FromDate = $filter('date')(utl.Formatter.getCurrentDate(), 'yyyy-MM-dd 00:00:00');
@@ -490,15 +507,69 @@
             utl.Http.doAction(options);
         };
 
-        // $scope.getddCount();
-        // $scope.tdyPendingPatList();
-        // $scope.tdyCompletedPatList();
-        // $scope.getOutPatientList();
-        // $scope.getAdmissionNoticedList();
-        // $scope.getDischargeNoticedList();
-        // $scope.getSurgeryScheduleList();
-        // $scope.getapnmntList();
-        // $scope.getApptlist();
+        $scope.reactProps = {
+            Items: $scope.Items,
+            TodayPendingList: $scope.TodayPendingList || [],
+            TodayCompletedList: $scope.TodayCompletedList || [],
+            admissionlist: $scope.admissionlist || [],
+            dischargedlist: $scope.dischargedlist || [],
+            ScheduleList: $scope.ScheduleList || [],
+            currentcontext: $scope.currentcontext
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                Items: $scope.Items,
+                TodayPendingList: $scope.TodayPendingList || [],
+                TodayCompletedList: $scope.TodayCompletedList || [],
+                admissionlist: $scope.admissionlist || [],
+                dischargedlist: $scope.dischargedlist || [],
+                ScheduleList: $scope.ScheduleList || [],
+                currentcontext: $scope.currentcontext
+            };
+            if (!$scope.$$phase) {
+                $scope.$applyAsync();
+            }
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'aeregistration') {
+                $state.go('app.aeregistration');
+            } else if (actionName === 'emergencypatients') {
+                $scope.emergencypatients();
+            } else if (actionName === 'daycarepatients') {
+                $scope.daycarepatients();
+            } else if (actionName === 'reports') {
+                $scope.reports();
+            } else if (actionName === 'refresh') {
+                $scope.getddCount();
+                $scope.tdyPendingPatList();
+                $scope.tdyCompletedPatList();
+                $scope.getAdmissionNoticedList();
+                $scope.getDischargeNoticedList();
+                $scope.getSurgeryScheduleList();
+            } else if (actionName === 'emr' && payload) {
+                utl.Session.setEMRPatientId(payload.PatientId || payload.Id);
+                $state.go('patientemr.patientdashboard', { eid: payload.EncounterId || payload.Id });
+            } else if (actionName === 'triage' && payload) {
+                $state.go('app.triages', { aeid: payload.Id, eid: payload.EncounterId });
+            } else if (actionName === 'admission') {
+                $state.go('app.admission-form', { id: 0, pid: payload.PatientId });
+            } else if (actionName === 'bedboard') {
+                $state.go('app.bedmanagementgrid');
+            } else if (actionName === 'dischargesummary' && payload) {
+                $state.go('app.dischargesummary-form', { id: 0, eid: payload.EncounterId });
+            } else if (actionName === 'otschedule') {
+                $state.go('app.surgeryschedule');
+            }
+        };
+
+        $scope.getddCount();
+        $scope.tdyPendingPatList();
+        $scope.tdyCompletedPatList();
+        $scope.getAdmissionNoticedList();
+        $scope.getDischargeNoticedList();
+        $scope.getSurgeryScheduleList();
     }
     AEDashboardController.$inject = ['$rootScope', '$scope', '$timeout', '$filter', '$stateParams', '$state', '$translate', 'utl'];
 

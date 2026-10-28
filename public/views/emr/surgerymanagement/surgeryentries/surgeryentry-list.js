@@ -43,6 +43,7 @@
         $scope.getListCallback = function (scope, res, options, hasError) {
             vm.gridConfig.data = res.Data;
             vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            $scope.refreshReactProps();
         };
 
         $scope.getList = function () {
@@ -448,9 +449,57 @@
             var CompletedId = utl.Lookup.getDefault($scope.lookup.SurgeryEntryStatus, 'Cancelled');
             $scope.currentfilter.SurgeryEntryStatusId = DraftId + "," + ApprovedId;
         }
+        $scope.reactProps = {
+            items: [],
+            lookup: {},
+            currentfilter: $scope.currentfilter,
+            pager: {
+                totalItems: 0,
+                currentPage: 1,
+                pageSize: 25
+            }
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                lookup: $scope.lookup || {},
+                currentfilter: angular.copy($scope.currentfilter),
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
+            };
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'updateFilter') {
+                angular.extend($scope.currentfilter, payload);
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            } else if (actionName === 'changePage') {
+                vm.gridConfig.pagerObj.currentPage = payload;
+                $scope.getList();
+            } else if (actionName === 'addNew') {
+                $scope.addNew();
+            } else if (actionName === 'backtoList') {
+                $scope.backtoList();
+            } else if (actionName === 'view') {
+                $scope.handleEvents('view', payload);
+            } else if (actionName === 'summary') {
+                $scope.handleEvents('summary', payload);
+            } else if (actionName === 'delete') {
+                $scope.handleEvents('delete', payload);
+            } else if (actionName === 'patientinfo') {
+                $scope.handleEvents('patientinfo', payload);
+            }
+        };
+
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
             setDefaults();
+            $scope.refreshReactProps();
             $scope.getList();
         };
 

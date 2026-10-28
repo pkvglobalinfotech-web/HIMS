@@ -86,6 +86,7 @@
             <div class="col-sm-12">
                 <input type="text" class="form-control" ng-disabled="item.isDatedisable" name="admissiondate"
                     ng-change="populateEstimateDisDate()" ng-date-object datepicker-options="datePickerOptions"
+                    min-date="datePickerOptions.minDate"
                     show-button-bar="{{datePickerOptions.showButtonBar}}"
                     uib-datepicker-popup="{{datePickerOptions.dateTimeFormat}}"
                     placeholder="{{datePickerOptions.placeholder}}" ng-click="DOADatePopup = { opened: true }"
@@ -127,17 +128,31 @@
             </div>
         </div> -->
         <div class="form-group col-sm-3 otprocedure_name">
-            <label class="col-sm-12 control-label" for="startdate" translate="otschedule-form.starttime.lbl"></label>
+            <label class="col-sm-12 control-label" for="startdate">
+                <i class="fa fa-calendar-check-o" style="color: #2563eb; margin-right: 4px;"></i>
+                <span>Start Date Time</span>
+                <span class="text-danger">*</span>
+            </label>
             <div class="col-sm-12 custom_dropdwn" id="startdate">
-                <uib-timepicker name="startdate" ng-model="item.StartTime" ng-time-object required>
-                </uib-timepicker>
+                <select name="startdate" class="form-control" ng-model="item.StartTime"
+                    ng-options="t.value as t.label for t in timeOptions" required
+                    style="height: 36px; border-radius: 6px; font-weight: 500;">
+                    <option value="">-- Select Start Time --</option>
+                </select>
             </div>
         </div>
         <div class="form-group col-sm-3">
-            <label class="col-sm-12 control-label" for="endtime" translate="otschedule-form.endtime.lbl"></label>
+            <label class="col-sm-12 control-label" for="endtime">
+                <i class="fa fa-calendar-check-o" style="color: #059669; margin-right: 4px;"></i>
+                <span>End Date Time</span>
+                <span class="text-danger">*</span>
+            </label>
             <div class="col-sm-12 custom_dropdwn" id="endtime">
-                <uib-timepicker name="endtime" ng-model="item.EndTime" ng-time-object required>
-                </uib-timepicker>
+                <select name="endtime" class="form-control" ng-model="item.EndTime"
+                    ng-options="t.value as t.label for t in timeOptions" required
+                    style="height: 36px; border-radius: 6px; font-weight: 500;">
+                    <option value="">-- Select End Time --</option>
+                </select>
             </div>
         </div>
         <div class="form-group col-sm-3">

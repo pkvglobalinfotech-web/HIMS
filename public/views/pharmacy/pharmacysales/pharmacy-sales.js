@@ -77,19 +77,46 @@
         $scope.currentcontext.CanPSDiscount = utl.Privilege.hasAccess('CanPSDiscount');
         $scope.currentcontext.CanAddToCredit_Button = utl.Privilege.hasAccess('CanAddToCredit_Button');
         $scope.currentcontext.CanCredit_Approver = utl.Privilege.hasAccess('CanCredit_Approver');
-        $scope.currentcontext.CanPharmacyDiscount = utl.Privilege.hasAccess('CanPharmacyDiscount');
+        $scope.currentcontext.CanPharmacyDiscount = $scope.HasAccess ? $scope.HasAccess('PharmacyDiscount', 'PharmacyDiscount') : true;
         $scope.currentcontext.CanAddnewbutton = utl.Privilege.hasAccess('CanAddnewbutton');
 
         $scope.checkBatchIndex = 0;
         $scope.zerostocksales = 0;
-        $scope.enableroundoff = 0;
-        $scope.requirewantedlist = 0;
-        $scope.carddetailsmandatory = 0;
-        $scope.carddetailsmandatory = utl.FacilitySetting.getFacilitySettingValue('billing', 'carddetailsmandatory');
-        $scope.zerostocksales =
-            utl.FacilitySetting.getFacilitySettingValue('billing', 'zerostocksales');
-        $scope.enableroundoff =
-            utl.FacilitySetting.getFacilitySettingValue('billing', 'enableroundoff');
+        function getEnableRoundOffSetting() {
+            var val = undefined;
+            if (utl && utl.FacilitySetting && typeof utl.FacilitySetting.getFacilitySettingValue === 'function') {
+                val = utl.FacilitySetting.getFacilitySettingValue('billing', 'enableroundoff');
+            }
+            if ((val === undefined || val === null || val === '') && $rootScope && $rootScope.FacilitySettings) {
+                if ($rootScope.FacilitySettings['billing'] && $rootScope.FacilitySettings['billing']['enableroundoff'] !== undefined) {
+                    val = $rootScope.FacilitySettings['billing']['enableroundoff'];
+                }
+            }
+            if ((val === undefined || val === null || val === '') && typeof sessionStorage !== 'undefined') {
+                try {
+                    var raw = sessionStorage.getItem('Session-FacilitySettings');
+                    if (raw) {
+                        var parsed = JSON.parse(raw);
+                        if (parsed) {
+                            if (parsed.billing && parsed.billing.enableroundoff !== undefined) {
+                                val = parsed.billing.enableroundoff;
+                            } else if (Array.isArray(parsed)) {
+                                var found = parsed.find(function(p) {
+                                    return (p.Category === 'billing' || p.category === 'billing') &&
+                                           (p.PreferenceKey === 'enableroundoff' || p.preferenceKey === 'enableroundoff');
+                                });
+                                if (found) {
+                                    val = found.PreferenceValue !== undefined ? found.PreferenceValue : found.preferenceValue;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+            return (val == 1 || val === '1' || val === true || val === 'true') ? 1 : 0;
+        }
+        $scope.getEnableRoundOffSetting = getEnableRoundOffSetting;
+        $scope.enableroundoff = getEnableRoundOffSetting();
         $scope.requirewantedlist =
             utl.FacilitySetting.getFacilitySettingValue('billing', 'requirewantedlist');
         $scope.batchpopup =
@@ -280,7 +307,13 @@
                 GuarantorId: -1,
                 GuarantorTypeId: -1,
                 GuarantorName: '',
-                StoreMasterId: 0,
+                StoreMasterId: (function () {
+                    try {
+                        return parseInt(localStorage.getItem('SELECTED_PHARMACY_STORE_ID'), 10) || 0;
+                    } catch (e) {
+                        return 0;
+                    }
+                })(),
                 StoreTypeId: 0,
                 StoreSubTypeId: 0,
                 SequenceOptionId: 1,
@@ -291,6 +324,762 @@
         }
 
         initPharmacy();
+
+        // =========================================================================
+        // REACT MODERNIZATION BRIDGE: PharmacySalesScreen
+        // =========================================================================
+        $scope.refreshReactProps = function () {
+            var doUpdate = function () {
+                $scope.reactProps = {
+                    item: angular.copy($scope.item || {}),
+                    currentfilter: angular.copy($scope.currentfilter || {}),
+                    currentcontext: angular.copy($scope.currentcontext || {}),
+                    selectedPatient: angular.copy($scope.selectedPatient || {}),
+                    encounter: angular.copy($scope.encounter || {}),
+                    patientBillDetails: angular.copy($scope.PatientBillDetails || []),
+                    paymentInfoDetails: angular.copy($scope.PaymentInfoDetails || []),
+                    patientPaymentDetails: angular.copy($scope.PatientPaymentDetails || []),
+                    deletedPatientBills: angular.copy($scope.DeletedPatientBills || []),
+                    lookup: {
+                        EncounterType: ($scope.lookup && $scope.lookup.EncounterType) || [],
+                        Doctor: ($scope.lookup && $scope.lookup.Doctor) || [],
+                        UserStores: ($scope.lookup && $scope.lookup.UserStores) || [],
+                        Guarantor: ($scope.lookup && $scope.lookup.Guarantor) || [],
+                        DiscountMode: ($scope.lookup && $scope.lookup.DiscountMode) || [],
+                        PatientType: ($scope.lookup && $scope.lookup.PatientType) || [],
+                        GuarantorType: ($scope.lookup && $scope.lookup.GuarantorType) || [],
+                        PaymentType: ($scope.lookup && $scope.lookup.PaymentType) || [],
+                        Bank: ($scope.lookup && $scope.lookup.Bank) || [],
+                        DiscountApprover: ($scope.lookup && $scope.lookup.DiscountApprover) || [],
+                        PrivateDueApprover: ($scope.lookup && $scope.lookup.PrivateDueApprover) || []
+                    },
+                    privileges: {
+                        canSave: ($scope.HasAccess ? $scope.HasAccess('PharmacySales', 'PS_Save') : true) !== false,
+                        canSaveApprove: ($scope.HasAccess ? $scope.HasAccess('PharmacySales', 'PS_SaveApprove') : true) !== false,
+                        canDelete: $scope.CanDelete,
+                        canDiscount: ($scope.HasAccess ? $scope.HasAccess('PharmacyDiscount', 'PharmacyDiscount') : true) !== false,
+                        canAddnewbutton: ($scope.HasAccess ? $scope.HasAccess('PharmacySales', 'Addnewbutton') : true) !== false,
+                        canAddToCredit_Button: ($scope.HasAccess ? $scope.HasAccess('PharmacySales', 'AddToCredit_Button') : true) !== false
+                    },
+                    flags: {
+                        canShowSaveBtn: $scope.canShowSaveBtn !== false,
+                        canShowSaveapproveBtn: $scope.canShowSaveapproveBtn !== false,
+                        canShowClearBtn: $scope.canShowClearBtn !== false,
+                        canShowCancelBtn: $scope.canShowCancelBtn,
+                        canShowAddCredit: $scope.CanShowAddCredit,
+                        hidePrintBtn: $scope.HidePrintBtn,
+                        isApproved: $scope.IsApproved,
+                        isSaving: $scope.isSaving,
+                        isMomentPay: $scope.IsMomentPay,
+                        isUPIPay: $scope.IsUPIPay,
+                        separatePaymentCounter: $scope.separatePaymentCounter,
+                        context: $scope.Context || 'pharmacy',
+                        enableRoundOff: $scope.enableroundoff === 1
+                    }
+                };
+            };
+            if ($scope.$$phase) {
+                doUpdate();
+            } else {
+                $scope.$evalAsync(doUpdate);
+            }
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            $scope.$evalAsync(function () {
+                switch (actionName) {
+                    case 'patientSelect':
+                    case 'patientChange':
+                        if (payload) {
+                            var patId = payload.PatientId || payload.Id || payload.id;
+                            if (patId) {
+                                $scope.currentfilter.PatientId = patId;
+                                if (typeof $scope.getPatient === 'function') {
+                                    $scope.getPatient();
+                                }
+                            }
+                        }
+                        break;
+                    case 'encounterTypeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.EncounterTypeId = payload.id;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'doctorChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.DoctorId = payload.id;
+                            if (payload.name) $scope.item.DoctorName = payload.name;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'storeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.currentfilter.StoreMasterId = payload.id;
+                            try {
+                                localStorage.setItem('SELECTED_PHARMACY_STORE_ID', String(payload.id));
+                            } catch (e) {}
+                            var storeObj = payload.store;
+                            if (!storeObj && $scope.lookup && $scope.lookup.UserStores) {
+                                for (var stIdx = 0; stIdx < $scope.lookup.UserStores.length; stIdx++) {
+                                    if ($scope.lookup.UserStores[stIdx].Id === payload.id) {
+                                        storeObj = $scope.lookup.UserStores[stIdx];
+                                        break;
+                                    }
+                                }
+                            }
+                            if (storeObj && typeof $scope.StoreChange === 'function') {
+                                $scope.StoreChange(storeObj);
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'guarantorChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.GuarantorId = payload.id;
+                            if (payload.item && typeof $scope.GuarantorChange === 'function') {
+                                $scope.GuarantorChange(payload.item);
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'guarantorTypeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.GuarantorTypeId = payload.id;
+                            if (payload.item && typeof $scope.GuarantorTypeChange === 'function') {
+                                $scope.GuarantorTypeChange(payload.item);
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'patientTypeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.PatientTypeId = payload.id;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'discountModeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.currentfilter.DiscountModeId = payload.id;
+                            if (typeof $scope.DiscountModechange === 'function') {
+                                $scope.DiscountModechange();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'genericSearchToggle':
+                        if (payload) {
+                            $scope.item.IsGenericSearch = !!payload.value;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'barcodeItemSelect':
+                        if (payload && payload.item) {
+                            var sel = payload.item;
+
+                            // Normalize StockItem on sel
+                            var stockItem = sel.StockItem || (sel.ItemMaster && sel.ItemMaster.StockItem);
+                            if (stockItem) {
+                                sel.StockItem = stockItem;
+                                if (sel.ItemMaster) sel.ItemMaster.StockItem = stockItem;
+                            }
+
+                            // Calculate total sellable stock and MrPrice based on storemaster configuration
+                            var stopDays = $scope.currentfilter.ExpiryPriorStopDays || 0;
+                            if (!stopDays && $scope.lookup && $scope.lookup.UserStores) {
+                                for (var us in $scope.lookup.UserStores) {
+                                    if ($scope.lookup.UserStores[us].Id == $scope.currentfilter.StoreMasterId && $scope.lookup.UserStores[us].StoreMaster) {
+                                        stopDays = $scope.lookup.UserStores[us].StoreMaster.ExpiryPriorStopDays || 0;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            var serials = (stockItem && stockItem.StockSerialItems) || sel.StockSerialItems || sel.BatchDetails || [];
+                            var calcStock = 0;
+                            var sellableSerials = [];
+                            if (Array.isArray(serials) && serials.length > 0) {
+                                for (var si = 0; si < serials.length; si++) {
+                                    var s = serials[si];
+                                    var sQty = Number(s.Quantity) || 0;
+                                    if (sQty > 0) {
+                                        var expDays = GetExpiryDays(s.ExpiryDate);
+                                        if (expDays > stopDays) {
+                                            calcStock += sQty;
+                                            sellableSerials.push(s);
+                                        }
+                                    }
+                                }
+                            } else if (sel.BatchId || sel.StockItemId) {
+                                var sQty2 = Number(sel.Quantity) || 0;
+                                if (sQty2 > 0 && GetExpiryDays(sel.ExpiryDate) > stopDays) {
+                                    calcStock = sQty2;
+                                    sellableSerials.push(sel);
+                                }
+                            } else {
+                                calcStock = Number(sel.StockInHand || sel.Quantity || sel.TotalQuantity || 0);
+                            }
+                            sel.StockInHand = calcStock;
+                            sel.TotalQuantity = calcStock;
+                            if (!sel.MrPrice && sel.ItemMaster && sel.ItemMaster.MrPrice) {
+                                sel.MrPrice = sel.ItemMaster.MrPrice;
+                            }
+
+                            // Check if there is an empty line item in $scope.PatientBillDetails
+                            var emptyIdx = -1;
+                            for (var bi = 0; bi < $scope.PatientBillDetails.length; bi++) {
+                                if ($scope.PatientBillDetails[bi].ItemMasterId <= 0 && !$scope.PatientBillDetails[bi].ItemName) {
+                                    emptyIdx = bi;
+                                    break;
+                                }
+                            }
+
+                            // If it's a StockSerialItem (has BatchId & StockItemId)
+                            if (sel.BatchId && sel.StockItemId) {
+                                var barcodePayload = {
+                                    SelectedItem: sel,
+                                    ItemMasterId: sel.ItemMasterId,
+                                    Quantity: 1
+                                };
+                                if (typeof $scope.OnPharmacyBarcodeSelected === 'function') {
+                                    $scope.OnPharmacyBarcodeSelected(barcodePayload);
+                                }
+                            } else {
+                                // It's a pharmacy store item (ItemStoreMap)
+                                if (emptyIdx === -1) {
+                                    if (typeof $scope.addNewLineItem === 'function') {
+                                        $scope.addNewLineItem();
+                                    }
+                                    emptyIdx = $scope.PatientBillDetails.length - 1;
+                                }
+                                if (emptyIdx >= 0 && $scope.PatientBillDetails[emptyIdx]) {
+                                    var rowItem = $scope.PatientBillDetails[emptyIdx];
+                                    rowItem.SelectedItem = sel;
+                                    
+                                    if (typeof $scope.ServiceItemChanged === 'function') {
+                                        $scope.ServiceItemChanged(emptyIdx, rowItem);
+                                    }
+
+                                    // ServiceItemChanged resets Quantity to 0. Force Quantity = 1 so ChooseBatches can allocate batch!
+                                    rowItem.Quantity = 1;
+
+                                    if (typeof $scope.ChooseBatches === 'function') {
+                                        $scope.ChooseBatches(emptyIdx, rowItem);
+                                    }
+
+                                    // Fallback if ChooseBatches did not allocate (e.g. batchpopup !== 1 or expiry/custom filters)
+                                    var targetDetail = $scope.PatientBillDetails[emptyIdx];
+                                    if (!targetDetail || targetDetail.ItemMasterId <= 0) {
+                                        targetDetail = $scope.PatientBillDetails[$scope.PatientBillDetails.length - 1];
+                                    }
+                                    if (targetDetail && targetDetail.ItemMasterId > 0) {
+                                        targetDetail.Quantity = targetDetail.Quantity && targetDetail.Quantity > 0 ? targetDetail.Quantity : 1;
+                                        var activeBatchList = sellableSerials.length > 0 ? sellableSerials : serials;
+                                        if (Array.isArray(activeBatchList) && activeBatchList.length > 0) {
+                                            var pickBatch = activeBatchList.find(function(b) { return (Number(b.Quantity) || 0) > 0 && GetExpiryDays(b.ExpiryDate) > stopDays; }) || activeBatchList[0];
+                                            if (pickBatch) {
+                                                if (!targetDetail.BatchId) targetDetail.BatchId = pickBatch.BatchId;
+                                                if (!targetDetail.SelectedBatchId) targetDetail.SelectedBatchId = pickBatch.BatchId;
+                                                if (!targetDetail.BatchQuantity) targetDetail.BatchQuantity = pickBatch.Quantity;
+                                                if (!targetDetail.StockSerialItemId) targetDetail.StockSerialItemId = pickBatch.Id;
+                                                if (!targetDetail.ExpiryDate) targetDetail.ExpiryDate = pickBatch.ExpiryDate;
+                                                if (!targetDetail.MrPrice || targetDetail.MrPrice === 0) {
+                                                    var bMrp = pickBatch.Mrp || pickBatch.ConversionMrp || sel.MrPrice || (sel.ItemMaster && sel.ItemMaster.MrPrice) || 0;
+                                                    targetDetail.MrPrice = parseFloat(Number(bMrp).toFixed(2));
+                                                    targetDetail.Rate = targetDetail.MrPrice;
+                                                }
+                                                if (!targetDetail.GSTPercentage && pickBatch.GstPercentage) {
+                                                    targetDetail.GSTPercentage = pickBatch.GstPercentage;
+                                                }
+                                            }
+                                        }
+                                        if (typeof $scope.CheckBatchQty === 'function') {
+                                            $scope.CheckBatchQty(targetDetail);
+                                        }
+                                    }
+                                }
+                            }
+                            if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'addServiceRow':
+                        if (typeof $scope.addNewLineItem === 'function') {
+                            $scope.addNewLineItem();
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'serviceItemChange':
+                        if (payload && payload.index !== undefined && payload.item) {
+                            var targetRow = $scope.PatientBillDetails[payload.index];
+                            if (targetRow) {
+                                var sItem = payload.item;
+                                var sStockItem = sItem.StockItem || (sItem.ItemMaster && sItem.ItemMaster.StockItem);
+                                if (sStockItem) {
+                                    sItem.StockItem = sStockItem;
+                                    if (sItem.ItemMaster) sItem.ItemMaster.StockItem = sStockItem;
+                                }
+                                var sStopDays = $scope.currentfilter.ExpiryPriorStopDays || 0;
+                                if (!sStopDays && $scope.lookup && $scope.lookup.UserStores) {
+                                    for (var sus in $scope.lookup.UserStores) {
+                                        if ($scope.lookup.UserStores[sus].Id == $scope.currentfilter.StoreMasterId && $scope.lookup.UserStores[sus].StoreMaster) {
+                                            sStopDays = $scope.lookup.UserStores[sus].StoreMaster.ExpiryPriorStopDays || 0;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                var sSerials = (sStockItem && sStockItem.StockSerialItems) || sItem.StockSerialItems || sItem.BatchDetails || [];
+                                var sStock = 0;
+                                var sSellableSerials = [];
+                                if (Array.isArray(sSerials) && sSerials.length > 0) {
+                                    for (var ssi = 0; ssi < sSerials.length; ssi++) {
+                                        var ss = sSerials[ssi];
+                                        var ssQty = Number(ss.Quantity) || 0;
+                                        if (ssQty > 0) {
+                                            var ssExpDays = GetExpiryDays(ss.ExpiryDate);
+                                            if (ssExpDays > sStopDays) {
+                                                sStock += ssQty;
+                                                sSellableSerials.push(ss);
+                                            }
+                                        }
+                                    }
+                                } else if (sItem.BatchId || sItem.StockItemId) {
+                                    var ssQty2 = Number(sItem.Quantity) || 0;
+                                    if (ssQty2 > 0 && GetExpiryDays(sItem.ExpiryDate) > sStopDays) {
+                                        sStock = ssQty2;
+                                        sSellableSerials.push(sItem);
+                                    }
+                                } else {
+                                    sStock = Number(sItem.StockInHand || sItem.Quantity || sItem.TotalQuantity || 0);
+                                }
+                                sItem.StockInHand = sStock;
+                                sItem.TotalQuantity = sStock;
+
+                                targetRow.SelectedItem = sItem;
+                                if (typeof $scope.ServiceItemChanged === 'function') {
+                                    $scope.ServiceItemChanged(payload.index, targetRow);
+                                }
+                                targetRow.Quantity = payload.quantity || 1;
+                                if (typeof $scope.ChooseBatches === 'function') {
+                                    $scope.ChooseBatches(payload.index, targetRow);
+                                }
+                                var activeSSerials = sSellableSerials.length > 0 ? sSellableSerials : sSerials;
+                                if (Array.isArray(activeSSerials) && activeSSerials.length > 0 && (!targetRow.BatchQuantity || targetRow.BatchQuantity === 0)) {
+                                    var pBatch = activeSSerials.find(function(b) { return (Number(b.Quantity) || 0) > 0 && GetExpiryDays(b.ExpiryDate) > sStopDays; }) || activeSSerials[0];
+                                    if (pBatch) {
+                                        targetRow.BatchId = pBatch.BatchId;
+                                        targetRow.SelectedBatchId = pBatch.BatchId;
+                                        targetRow.BatchQuantity = pBatch.Quantity;
+                                        targetRow.StockSerialItemId = pBatch.Id;
+                                        targetRow.ExpiryDate = pBatch.ExpiryDate;
+                                        targetRow.MrPrice = parseFloat(Number(pBatch.Mrp || sItem.MrPrice || 0).toFixed(2));
+                                        targetRow.Rate = targetRow.MrPrice;
+                                        targetRow.GSTPercentage = pBatch.GstPercentage || 0;
+                                    }
+                                }
+                                if (typeof $scope.CheckBatchQty === 'function') {
+                                    $scope.CheckBatchQty(targetRow);
+                                }
+                            }
+                            if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'qtyChange':
+                        if (payload && payload.index !== undefined && $scope.PatientBillDetails[payload.index]) {
+                            var row = $scope.PatientBillDetails[payload.index];
+                            row.Quantity = payload.quantity;
+                            if (typeof $scope.CheckBatchQty === 'function') {
+                                $scope.CheckBatchQty(row);
+                            }
+                            if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'batchDetails':
+                        if (payload && payload.index !== undefined) {
+                            var bItem = payload.item || $scope.PatientBillDetails[payload.index];
+                            if (typeof $scope.batchDetails === 'function') {
+                                $scope.batchDetails(payload.index, bItem);
+                            }
+                        }
+                        break;
+                    case 'alternateDetails':
+                        if (payload && payload.index !== undefined) {
+                            var aItem = payload.item || $scope.PatientBillDetails[payload.index];
+                            if (typeof $scope.alternateDetails === 'function') {
+                                $scope.alternateDetails(payload.index, aItem);
+                            }
+                        }
+                        break;
+                    case 'alertInfo':
+                        if (payload && payload.index !== undefined) {
+                            var alItem = payload.item || $scope.PatientBillDetails[payload.index];
+                            if (typeof $scope.alertInfo === 'function') {
+                                $scope.alertInfo(payload.index, alItem);
+                            }
+                        }
+                        break;
+                    case 'itemdataInfo':
+                        if (payload && payload.index !== undefined) {
+                            var itItem = payload.item || $scope.PatientBillDetails[payload.index];
+                            if (typeof $scope.itemdataInfo === 'function') {
+                                $scope.itemdataInfo(payload.index, itItem);
+                            }
+                        }
+                        break;
+                    case 'deleteRow':
+                        if (payload && payload.index !== undefined && $scope.PatientBillDetails[payload.index]) {
+                            var dItem = payload.item || $scope.PatientBillDetails[payload.index];
+                            if (typeof $scope.deletePatientBillDetails === 'function') {
+                                $scope.deletePatientBillDetails(payload.index, dItem);
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'pendingPrescription':
+                        if (typeof $scope.pendingPrescription === 'function') {
+                            $scope.pendingPrescription();
+                        }
+                        break;
+                    case 'pendingBill':
+                        if (typeof $scope.pendingBill === 'function') {
+                            $scope.pendingBill();
+                        }
+                        break;
+                    case 'adjustAgainstAdvance':
+                        if (typeof $scope.AdjustAgainstAdvance === 'function') {
+                            $scope.AdjustAgainstAdvance();
+                        }
+                        break;
+                    case 'headerDiscountChange':
+                        if (payload) {
+                            if (payload.discountModeId !== undefined) {
+                                $scope.currentfilter.DiscountModeId = payload.discountModeId;
+                            }
+                            var hVal = payload.value !== undefined ? payload.value : payload;
+                            $scope.currentcontext.BillDiscount = parseFloat(hVal) || 0;
+                            if (typeof $scope.HeaderDiscountValueChange === 'function') {
+                                $scope.HeaderDiscountValueChange();
+                            } else if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            if ($scope.currentcontext.TenderAmount > 0) {
+                                var nAmt = parseFloat($scope.currentcontext.TotNetAmount) || 0;
+                                if ($scope.currentcontext.TenderAmount > nAmt) {
+                                    $scope.currentcontext.ReturnAmount = parseFloat(($scope.currentcontext.TenderAmount - nAmt).toFixed(2));
+                                } else {
+                                    $scope.currentcontext.ReturnAmount = 0;
+                                }
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'lineDiscountChange':
+                        if (payload && payload.index !== undefined && $scope.PatientBillDetails[payload.index]) {
+                            var targetRow = $scope.PatientBillDetails[payload.index];
+                            if (payload.discountModeId !== undefined) {
+                                targetRow.DiscountModeId = payload.discountModeId;
+                            }
+                            if (payload.discountAmount !== undefined) {
+                                targetRow.DiscountAmount = parseFloat(payload.discountAmount) || 0;
+                            }
+                            if (typeof $scope.CalcualteAmt === 'function') {
+                                $scope.CalcualteAmt(targetRow);
+                            }
+                            if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            if ($scope.currentcontext.TenderAmount > 0) {
+                                var nAmt2 = parseFloat($scope.currentcontext.TotNetAmount) || 0;
+                                if ($scope.currentcontext.TenderAmount > nAmt2) {
+                                    $scope.currentcontext.ReturnAmount = parseFloat(($scope.currentcontext.TenderAmount - nAmt2).toFixed(2));
+                                } else {
+                                    $scope.currentcontext.ReturnAmount = 0;
+                                }
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'tenderAmtChange':
+                        if (payload) {
+                            var tVal = parseFloat(payload.value) || 0;
+                            $scope.currentcontext.TenderAmount = tVal;
+                            var netAmt = parseFloat($scope.currentcontext.TotNetAmount) || 0;
+                            if (tVal > 0 && tVal > netAmt) {
+                                $scope.currentcontext.ReturnAmount = parseFloat((tVal - netAmt).toFixed(2));
+                            } else {
+                                $scope.currentcontext.ReturnAmount = 0;
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'discountApproverChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.currentcontext.DiscountApprovedBy = payload.id;
+                            if (payload.item && typeof $scope.setDiscountLimit === 'function') {
+                                $scope.setDiscountLimit(payload.item);
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'creditApproverChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.item.PrivateDueId = payload.id;
+                            $scope.item.GuarantorDueId = payload.id;
+                            if (payload.item && typeof $scope.setDueLimit === 'function') {
+                                $scope.setDueLimit(payload.item);
+                            }
+                            $scope.IsDueApproved = payload.id > 0;
+                            if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'paymentTypeChange':
+                        if (payload && payload.id !== undefined) {
+                            $scope.currentcontext.PaymentTypeId = payload.id;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'receiptAmtChange':
+                        if (payload && payload.value !== undefined) {
+                            var rAmt = parseFloat(payload.value) || 0;
+                            var maxNet = Math.max(0, parseFloat($scope.currentcontext.TotNetAmount) || 0);
+                            var prevPaid = parseFloat($scope.currentcontext.PaidAmt || 0);
+                            if (prevPaid <= 0 && Array.isArray($scope.PaymentInfoDetails) && $scope.PaymentInfoDetails.length > 0) {
+                                prevPaid = $scope.PaymentInfoDetails.reduce(function (s, r) { return s + (parseFloat(r.AmountPaid) || 0); }, 0);
+                            }
+                            var maxAllowed = Math.max(0, maxNet - prevPaid);
+                            if (maxAllowed > 0 && rAmt > maxAllowed) {
+                                rAmt = maxAllowed;
+                            }
+                            $scope.currentcontext.ReceiptAmt = rAmt;
+                            if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'syncPaymentLines':
+                        if (payload && Array.isArray(payload.payments)) {
+                            var isMulti = Boolean(payload.isMultiplePayment !== undefined ? payload.isMultiplePayment : (payload.payments.length > 1));
+                            $scope.item.IsMultiplePayment = isMulti;
+                            var prevPaid = parseFloat($scope.currentcontext.PaidAmt || 0);
+                            if (prevPaid <= 0 && Array.isArray($scope.PaymentInfoDetails) && $scope.PaymentInfoDetails.length > 0) {
+                                prevPaid = $scope.PaymentInfoDetails.reduce(function (s, r) { return s + (parseFloat(r.AmountPaid) || 0); }, 0);
+                            }
+                            var maxNet = Math.max(0, parseFloat($scope.currentcontext.TotNetAmount) || 0);
+                            var remainingNet = Math.max(0, maxNet - prevPaid);
+                            $scope.PatientPaymentDetails = payload.payments.map(function (p) {
+                                return {
+                                    Id: p.Id || 0,
+                                    PaymentTypeId: p.PaymentTypeId || 1,
+                                    AmountPaid: parseFloat(p.AmountPaid) || 0,
+                                    BankId: p.BankId || -1,
+                                    CardTypeId: p.CardTypeId || -1,
+                                    TerminalNoId: p.TerminalNoId || null,
+                                    ChequeNo: p.ChequeNo || '',
+                                    ChequeDate: p.ChequeDate || null,
+                                    UPIRefNumber: p.UPIRefNumber || '',
+                                    AuthorizedCode: p.AuthorizedCode || p.AuthorizeNumber || '',
+                                    CardNumber: p.CardNumber || '',
+                                    ReceiptDateTime: utl.Formatter.getCurrentDate(),
+                                    FacilityId: $scope.item.FacilityId || 0,
+                                    OrganizationId: $scope.item.OrganizationId || 0,
+                                    PatientId: $scope.item.PatientId || $scope.currentfilter.PatientId,
+                                    EncounterId: $scope.item.EncounterId,
+                                    EncounterTypeId: $scope.item.EncounterTypeId,
+                                    BillTypeId: 4,
+                                    IsPharmacyReceipt: 1,
+                                    PharmacyReceiptTypeId: $scope.item.PharmacySaleTypeId,
+                                    PatientName: $scope.item.PatientName,
+                                    DepartmentID: $scope.item.DepartmentId,
+                                    DoctorId: $scope.item.DoctorId,
+                                    GuarantorId: $scope.currentfilter.GuarantorId,
+                                    GuarantorTypeId: $scope.currentfilter.GuarantorTypeId,
+                                    ReceiptGeneratedById: $scope.item.ReceiptGeneratedById,
+                                    ReceiptApprovedById: $scope.currentcontext.ApprovedById,
+                                    ReceiptTypeId: isMulti ? 2 : ($scope.currentcontext.ReceiptTypeId || 2),
+                                    IsMultiplePayment: isMulti,
+                                    PaymentStatusId: 3,
+                                    ReceiptStatusId: 1,
+                                    OutStandingAmount: parseFloat($scope.currentcontext.PendingAmt || remainingNet) || 0,
+                                    DueAmount: Math.max(0, (parseFloat($scope.currentcontext.PendingAmt || remainingNet) || 0) - (parseFloat(p.AmountPaid) || 0)),
+                                    CollectedOn: utl.Formatter.getCurrentDate(),
+                                };
+                            });
+                            var totalCollected = $scope.PatientPaymentDetails.reduce(function (sum, p) {
+                                return sum + (parseFloat(p.AmountPaid) || 0);
+                            }, 0);
+                            if (remainingNet > 0 && totalCollected > remainingNet) {
+                                totalCollected = remainingNet;
+                            }
+                            $scope.currentcontext.ReceiptAmt = parseFloat(totalCollected.toFixed(2));
+                            $scope.currentcontext.TotBalanceAmt = parseFloat(Math.max(0, maxNet - prevPaid - totalCollected).toFixed(2));
+                            if ($scope.PatientPaymentDetails.length > 0) {
+                                $scope.currentcontext.PaymentTypeId = $scope.PatientPaymentDetails[0].PaymentTypeId;
+                            }
+                            if ($scope.currentcontext.TenderAmount > 0) {
+                                if ($scope.currentcontext.TenderAmount > maxNet) {
+                                    $scope.currentcontext.ReturnAmount = parseFloat(($scope.currentcontext.TenderAmount - maxNet).toFixed(2));
+                                } else {
+                                    $scope.currentcontext.ReturnAmount = 0;
+                                }
+                            }
+                            if (typeof $scope.CalculateNetAmt === 'function') {
+                                $scope.CalculateNetAmt();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'toggleRoundOff':
+                        if (payload && payload.enabled !== undefined) {
+                            $scope.enableroundoff = payload.enabled ? 1 : 0;
+                        } else {
+                            $scope.enableroundoff = $scope.enableroundoff === 1 ? 0 : 1;
+                        }
+                        if (typeof $scope.CalculateNetAmt === 'function') {
+                            $scope.CalculateNetAmt();
+                        }
+                        $scope.refreshReactProps();
+                        break;
+                    case 'fieldChange':
+                        if (payload) {
+                            angular.extend($scope.item, payload);
+                            if (payload.IsMultiplePayment !== undefined) {
+                                $scope.item.IsMultiplePayment = Boolean(payload.IsMultiplePayment);
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'addPay':
+                        if (typeof $scope.addPay === 'function') {
+                            $scope.addPay();
+                        }
+                        $scope.refreshReactProps();
+                        break;
+                    case 'addnewpatient':
+                        if (typeof $scope.addnewpatient === 'function') {
+                            $scope.addnewpatient();
+                        }
+                        break;
+                    case 'clear':
+                        if (typeof $scope.clear === 'function') {
+                            $scope.clear();
+                        }
+                        $scope.refreshReactProps();
+                        break;
+                    case 'findBill':
+                        if (typeof $scope.findBill === 'function') {
+                            $scope.findBill();
+                        }
+                        break;
+                    case 'findBillSelect':
+                        if (payload) {
+                            PatientPharmacyBillPickerCallback({
+                                BillId: payload.Id || payload.BillId,
+                                BillStatusId: payload.PatientBillStatusId || payload.BillStatusId,
+                                StoreId: payload.StoreId || $scope.currentfilter.StoreMasterId
+                            });
+                        }
+                        break;
+                    case 'outstandingBill':
+                        if (typeof $scope.outstandingBill === 'function') {
+                            $scope.outstandingBill();
+                        }
+                        break;
+                    case 'backtoList':
+                        if (typeof $scope.backtoList === 'function') {
+                            $scope.backtoList();
+                        }
+                        break;
+                    case 'patcmnts':
+                        if (typeof $scope.patcmnts === 'function') {
+                            $scope.patcmnts();
+                        }
+                        break;
+                    case 'deleteBill':
+                        if (typeof $scope.DeleteCompleteBill === 'function') {
+                            $scope.DeleteCompleteBill();
+                        }
+                        break;
+                    case 'addCreditBill':
+                        if (typeof $scope.addCreditBill === 'function') {
+                            $scope.addCreditBill();
+                        }
+                        break;
+                    case 'saveDraft':
+                        if (typeof $scope.saveDraft === 'function') {
+                            $scope.saveDraft();
+                        }
+                        break;
+                    case 'saveAndApprove':
+                        if (typeof $scope.saveAndApprove === 'function') {
+                            $scope.saveAndApprove();
+                        }
+                        break;
+                    case 'paymentconfirm':
+                        if (typeof $scope.paymentconfirm === 'function') {
+                            $scope.paymentconfirm();
+                        }
+                        break;
+                    case 'paymentconfirmQR':
+                        if (typeof $scope.paymentconfirmQR === 'function') {
+                            $scope.paymentconfirmQR();
+                        }
+                        break;
+                    case 'retryTransaction':
+                        if (typeof $scope.retryTransaction === 'function') {
+                            $scope.retryTransaction();
+                        }
+                        break;
+                    case 'print':
+                        if (typeof $scope.originalprint === 'function') {
+                            $scope.originalprint();
+                        } else if (typeof $scope.print === 'function') {
+                            $scope.print();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            });
+        };
+
+        $scope.$watchGroup([
+            'item.Id',
+            'item.PatientId',
+            'item.DoctorId',
+            'item.GuarantorId',
+            'item.GuarantorTypeId',
+            'item.PatientBillStatusId',
+            'item.BillNumber',
+            'item.GrossAmount',
+            'item.TotDiscAmount',
+            'currentcontext.TotNetAmount',
+            'currentcontext.ReceiptAmt',
+            'currentcontext.TotBalanceAmt',
+            'currentcontext.PaymentTypeId',
+            'currentfilter.StoreMasterId',
+            'currentfilter.DiscountModeId',
+            'canShowSaveBtn',
+            'canShowSaveapproveBtn',
+            'PatientBillDetails.length'
+        ], function () {
+            $scope.refreshReactProps();
+        });
+
+        // Initial sync of props
+        $scope.refreshReactProps();
 
         $scope.EnableBillWithComeReceipt = function () {
             var flag = !$scope.item.BillWithComeReceipt;
@@ -520,6 +1309,9 @@
             $scope.getAvailableAmount();
             $scope.getUserBills();
             $scope.initLookup();
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.getAvailableAmount = function () {
@@ -825,8 +1617,13 @@
         }
 
         $scope.ReturnData = function (patData) {
-            $scope.currentfilter.PatientId = patData.PatientId;
-            $scope.patientChange();
+            if (patData && (patData.PatientId || patData.Id)) {
+                $scope.currentfilter.PatientId = patData.PatientId || patData.Id;
+                $scope.patientChange();
+                if (typeof $scope.refreshReactProps === 'function') {
+                    $scope.refreshReactProps();
+                }
+            }
         };
 
         $scope.addnewpatient = function () {
@@ -945,13 +1742,21 @@
         };
 
         $scope.StoreChange = function (SelectedStore) {
-            $scope.currentfilter.StoreTypeId = SelectedStore.StoreMaster.StoreTypeId;
-            $scope.currentfilter.StoreSubTypeId = SelectedStore.StoreMaster.StoreSubTypeId;
-            $scope.currentfilter.SequenceOptionId = SelectedStore.StoreMaster.SequenceOptionId;
+            if (!SelectedStore) return;
+            $scope.currentfilter.StoreMasterId = SelectedStore.Id;
+            try {
+                localStorage.setItem('SELECTED_PHARMACY_STORE_ID', String(SelectedStore.Id));
+            } catch (e) {}
 
-            $scope.currentfilter.IsStoreSeparateSequence = SelectedStore.StoreMaster.IsSeqbasedStore;
-            $scope.currentfilter.ExpiryWarningDays = SelectedStore.StoreMaster.ExpiryWarningDays;
-            $scope.currentfilter.ExpiryPriorStopDays = SelectedStore.StoreMaster.ExpiryPriorStopDays;
+            if (SelectedStore.StoreMaster) {
+                $scope.currentfilter.StoreTypeId = SelectedStore.StoreMaster.StoreTypeId;
+                $scope.currentfilter.StoreSubTypeId = SelectedStore.StoreMaster.StoreSubTypeId;
+                $scope.currentfilter.SequenceOptionId = SelectedStore.StoreMaster.SequenceOptionId;
+
+                $scope.currentfilter.IsStoreSeparateSequence = SelectedStore.StoreMaster.IsSeqbasedStore;
+                $scope.currentfilter.ExpiryWarningDays = SelectedStore.StoreMaster.ExpiryWarningDays;
+                $scope.currentfilter.ExpiryPriorStopDays = SelectedStore.StoreMaster.ExpiryPriorStopDays;
+            }
             $scope.item.StaffCheck = false;
             $scope.item.StaffDiscountId = -1;
             $scope.item.StaffId = -1;
@@ -961,8 +1766,17 @@
             $scope.getStorePrintPreference();
             /* $scope.getStoreStaffDiscounts(); */
 
-            if ($scope.PatientBillDetails.length > 1) {
-                $scope.clear();
+            // NEVER reload the page on store change. If medicines were added for previous store, clear them in-memory only:
+            if ($scope.PatientBillDetails && $scope.PatientBillDetails.length > 0) {
+                var hasActiveMedicines = $scope.PatientBillDetails.some(function (r) {
+                    return r && (r.ItemMasterId > 0 || r.Quantity > 0 || r.NetAmt > 0);
+                });
+                if (hasActiveMedicines) {
+                    $scope.PatientBillDetails = [];
+                    if (typeof $scope.CalculateNetAmt === 'function') {
+                        $scope.CalculateNetAmt();
+                    }
+                }
             }
         };
 
@@ -1345,6 +2159,12 @@
         };
 
         $scope.applyVisibilityRules = function () {
+            if (!$scope.currentcontext.id || $scope.currentcontext.id <= 0) {
+                $scope.item.PatientBillStatusId = 1;
+                $scope.canShowSaveBtn = true;
+                $scope.canShowSaveapproveBtn = true;
+                $scope.IsApproved = false;
+            }
             if ($scope.item.PatientBillStatusId == 1) {
                 $scope.canShowSaveBtn = true;
                 // $scope.CanShowAdd = false;
@@ -1889,6 +2709,9 @@
             $timeout(function () {
                 $('#' + nextId).focus();
             }, 100);
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.alternatetable = function () {
@@ -2285,17 +3108,29 @@
                     if (SelectedMasterItem.ItemMaster.StockItem &&
                         SelectedMasterItem.ItemMaster.StockItem.StockSerialItems.length > 0) {
                         var SumOfSerialQuantity = 0;
+                        var stopDays = $scope.currentfilter.ExpiryPriorStopDays || 0;
+                        if (!stopDays && $scope.lookup && $scope.lookup.UserStores) {
+                            for (var us in $scope.lookup.UserStores) {
+                                if ($scope.lookup.UserStores[us].Id == $scope.currentfilter.StoreMasterId && $scope.lookup.UserStores[us].StoreMaster) {
+                                    stopDays = $scope.lookup.UserStores[us].StoreMaster.ExpiryPriorStopDays || 0;
+                                    break;
+                                }
+                            }
+                        }
                         stockserialitems = SelectedMasterItem.ItemMaster.StockItem.StockSerialItems;
                         for (batid = 0; batid < stockserialitems.length; batid++) {
                             serialitem = stockserialitems[batid];
                             if (serialitem.Quantity > 0) {
-                                if (serialitem.IsMultiUse) {
-                                    var SumOfQty = parseInt(serialitem.PendingTransactions);
-                                    SumOfSerialQuantity = SumOfSerialQuantity + serialitem.Quantity
-                                } else {
-                                    SumOfSerialQuantity = SumOfSerialQuantity + serialitem.Quantity;
+                                var expDays = GetExpiryDays(serialitem.ExpiryDate);
+                                if (expDays > stopDays) {
+                                    if (serialitem.IsMultiUse) {
+                                        var SumOfQty = parseInt(serialitem.PendingTransactions);
+                                        SumOfSerialQuantity = SumOfSerialQuantity + serialitem.Quantity;
+                                    } else {
+                                        SumOfSerialQuantity = SumOfSerialQuantity + serialitem.Quantity;
+                                    }
+                                    selectedItem.BatchDetails.push(serialitem);
                                 }
-                                selectedItem.BatchDetails.push(serialitem);
                             }
                         }
 
@@ -3461,6 +4296,7 @@
 
             $scope.currentcontext.TotBalanceAmt = parseFloat((parseFloat($scope.currentcontext.TotNetAmount) - parseFloat($scope.currentcontext.ReceiptAmt) - parseFloat($scope.currentcontext.PaidAmt)).toFixed(2));
 
+            $scope.enableroundoff = getEnableRoundOffSetting();
             var NetNaturalValue = getNatural(Number($scope.currentcontext.TotNetAmount).toFixed(2));
             var NetDecimalValue = getDecimal(Number($scope.currentcontext.TotNetAmount).toFixed(2));
             var PreferedRoundOff = parseFloat($scope.item.PreferedRoundOff);
@@ -3470,38 +4306,43 @@
                     $scope.currentcontext.TotNetAmount = NetNaturalValue;
                     $scope.currentcontext.TotBalanceAmt = parseFloat($scope.currentcontext.TotNetAmount) - parseFloat($scope.currentcontext.ReceiptAmt) - parseFloat($scope.currentcontext.PaidAmt);
                     NetRoundOffValue = -1 * (NetDecimalValue / 100);
-                    $scope.item.TotRndoffAmt = parseFloat(NetRoundOffValue);
+                    $scope.item.TotRndoffAmt = parseFloat(NetRoundOffValue.toFixed(2));
                 } else if (NetDecimalValue >= 50 && NetDecimalValue <= 99) {
                     $scope.currentcontext.TotNetAmount = NetNaturalValue + 1;
                     $scope.currentcontext.TotBalanceAmt = parseFloat($scope.currentcontext.TotNetAmount) - parseFloat($scope.currentcontext.ReceiptAmt) - parseFloat($scope.currentcontext.PaidAmt);
                     NetRoundOffValue = (100 - NetDecimalValue) / 100;
-                    $scope.item.TotRndoffAmt = parseFloat(NetRoundOffValue);
+                    $scope.item.TotRndoffAmt = parseFloat(NetRoundOffValue.toFixed(2));
                 } else {
                     NetRoundOffValue = 0;
-                    $scope.item.TotRndoffAmt = parseFloat(NetRoundOffValue);
+                    $scope.item.TotRndoffAmt = 0;
                 }
+            } else {
+                NetRoundOffValue = 0;
+                $scope.item.TotRndoffAmt = 0;
             }
+            $scope.item.RoundOffValue = $scope.item.TotRndoffAmt;
+            $scope.currentcontext.RoundOffValue = $scope.item.TotRndoffAmt;
 
 
             var billBalance = parseFloat(((parseFloat($scope.currentcontext.TotNetAmount)) - parseFloat($scope.currentcontext.PaidAmt)).toFixed(2));
             if ($scope.item.IsMultiplePayment) {
                 if ($scope.currentcontext.PaidAmt > 0) {
                     if (parseFloat(($scope.currentcontext.ReceiptAmt)) > (parseFloat($scope.currentcontext.TotNetAmount) - parseFloat($scope.currentcontext.PaidAmt))) {
-                        $scope.currentcontext.ReceiptAmt = 0;
-                        $scope.currentcontext.TotBalanceAmt = billBalance;
+                        $scope.currentcontext.ReceiptAmt = parseFloat((parseFloat($scope.currentcontext.TotNetAmount) - parseFloat($scope.currentcontext.PaidAmt)).toFixed(2));
+                        $scope.currentcontext.TotBalanceAmt = 0;
                         utl.Alert.showErrorMsg($translate.instant('billing.pharmacy-return.receivingamt.lbl'));
                     }
                 } else {
-                    if (parseFloat(($scope.currentcontext.ReceiptAmt)) > math.round($scope.currentcontext.TotNetAmount)) {
-                        $scope.currentcontext.ReceiptAmt = 0;
-                        $scope.currentcontext.TotBalanceAmt = billBalance;
+                    if (parseFloat(($scope.currentcontext.ReceiptAmt)) > Math.round($scope.currentcontext.TotNetAmount)) {
+                        $scope.currentcontext.ReceiptAmt = $scope.currentcontext.TotNetAmount;
+                        $scope.currentcontext.TotBalanceAmt = 0;
                         utl.Alert.showErrorMsg($translate.instant('billing.pharmacy-return.receivingamt.lbl'));
                     }
                 }
             } else {
-                if (parseFloat(($scope.currentcontext.ReceiptAmt)) > math.round(billBalance)) {
-                    $scope.currentcontext.ReceiptAmt = 0;
-                    $scope.currentcontext.TotBalanceAmt = billBalance;
+                if (parseFloat(($scope.currentcontext.ReceiptAmt)) > Math.round(billBalance)) {
+                    $scope.currentcontext.ReceiptAmt = billBalance;
+                    $scope.currentcontext.TotBalanceAmt = 0;
                     utl.Alert.showErrorMsg($translate.instant('billing.pharmacy-return.receivingamt.lbl'));
                 }
             }
@@ -3532,10 +4373,11 @@
             }
 
 
-            $scope.item.Received = $scope.currentcontext.ReceiptAmt !== 0 ?
-                $scope.currentcontext.ReceiptAmt : $scope.currentcontext.PaidAmt !== 0 ? $scope.currentcontext.PaidAmt : 0;
-            if ($scope.currentcontext.id !== 0 && $scope.item.PatientBillStatusId !== 1)
-                $scope.item.Received = parseFloat($scope.currentcontext.PaidAmt) + parseFloat($scope.currentcontext.ReceiptAmt);
+            if ($scope.currentcontext.id === 0 || $scope.item.PatientBillStatusId <= 1) {
+                $scope.item.Received = parseFloat($scope.currentcontext.ReceiptAmt || 0);
+            } else {
+                $scope.item.Received = parseFloat($scope.currentcontext.PaidAmt || 0) + parseFloat($scope.currentcontext.ReceiptAmt || 0);
+            }
 
             if (vm.DueApprover) {
                 $scope.DueLimit = vm.DueApprover.PrivateDueLimit;
@@ -3589,6 +4431,14 @@
                 $scope.setDefaultPrivateDueId();
             } else if (!$scope.currentcontext.ReceiptAmt && $scope.item.GuarantorTypeId > 1) {
                 $scope.item.GuarantorDueId = $scope.item.GuarantorId;
+            }
+            if ($scope.currentcontext.TenderAmount > 0) {
+                var cNet = parseFloat($scope.currentcontext.TotNetAmount) || 0;
+                if ($scope.currentcontext.TenderAmount > cNet) {
+                    $scope.currentcontext.ReturnAmount = parseFloat(($scope.currentcontext.TenderAmount - cNet).toFixed(2));
+                } else {
+                    $scope.currentcontext.ReturnAmount = 0;
+                }
             }
             $scope.setupPaymentDetails();
         };
@@ -3934,14 +4784,19 @@
         }
 
         function GetExpiryDays(ExpiryDate) {
-            var TodayDate = new Date().toISOString().slice(0, 10);
-            var CurDate = new Date(TodayDate);
+            if (!ExpiryDate) return 0;
+            try {
+                var TodayDate = new Date().toISOString().slice(0, 10);
+                var CurDate = new Date(TodayDate);
 
-            var FutureDate = ExpiryDate.slice(0, 10);
-            var ExpDate = new Date(FutureDate);
+                var FutureDate = typeof ExpiryDate === 'string' ? ExpiryDate.slice(0, 10) : new Date(ExpiryDate).toISOString().slice(0, 10);
+                var ExpDate = new Date(FutureDate);
 
-            var ExpiryDays = Math.round((ExpDate - CurDate) / (1000 * 60 * 60 * 24));
-            return ExpiryDays;
+                var ExpiryDays = Math.round((ExpDate - CurDate) / (1000 * 60 * 60 * 24));
+                return ExpiryDays;
+            } catch (e) {
+                return 0;
+            }
         }
 
         $scope.updateReceiptAmt = function () {
@@ -3949,18 +4804,23 @@
                 utl.Alert.showErrorMsg($translate.instant('Please Select Insurance'));
                 return;
             } else {
-                if ($scope.currentcontext.TotBalanceAmt !== 0.00) {
-                    if ($scope.currentcontext.id === 0 || $scope.item.PatientBillStatusId === 1) {
-                        $scope.currentcontext.ReceiptAmt = parseFloat($scope.item.Received) + parseFloat($scope.currentcontext.TotBalanceAmt);
-                        $scope.item.Received = $scope.currentcontext.ReceiptAmt;
-                    } else {
-                        $scope.currentcontext.ReceiptAmt = parseFloat($scope.currentcontext.ReceiptAmt) + parseFloat($scope.currentcontext.TotBalanceAmt);
-                        $scope.item.Received = ($scope.currentcontext.TotNetAmount);
+                var prevPaid = 0;
+                if ($scope.currentcontext.id > 0 && $scope.item.PatientBillStatusId > 1) {
+                    prevPaid = parseFloat($scope.currentcontext.PaidAmt || 0);
+                    if (prevPaid <= 0 && Array.isArray($scope.PaymentInfoDetails) && $scope.PaymentInfoDetails.length > 0) {
+                        prevPaid = $scope.PaymentInfoDetails.reduce(function (s, r) { return s + (parseFloat(r.AmountPaid) || 0); }, 0);
                     }
-                    $scope.currentcontext.ReceiptAmt = parseFloat($scope.currentcontext.ReceiptAmt).toFixed(2);
-                    $scope.currentcontext.ReceiptAmt = parseFloat($scope.currentcontext.ReceiptAmt);
                 }
+                var netPayable = Math.max(0, parseFloat($scope.currentcontext.TotNetAmount || 0));
+                var remaining = Math.max(0, parseFloat((netPayable - prevPaid).toFixed(2)));
+
+                // Set ReceiptAmt to the remaining net payable based on bill
+                $scope.currentcontext.ReceiptAmt = remaining;
+                $scope.item.Received = remaining;
                 $scope.currentcontext.TotBalanceAmt = 0.00;
+                if (typeof $scope.refreshReactProps === 'function') {
+                    $scope.refreshReactProps();
+                }
             }
         };
 
@@ -4021,6 +4881,9 @@
             $scope.initLookup();
             $scope.getBillInfoByBillId();
             $scope.PatPaymentDetails($scope.currentcontext.id);
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
         }
 
         $scope.findBill = function () {
@@ -4278,6 +5141,9 @@
                 var item = $scope.PrescriptionDetails[idx];
                 item.IsThisPrescription = true;
                 $scope.ServiceItemChanged(idx, item);
+            }
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
             }
         };
 
@@ -4955,6 +5821,9 @@
             }
 
             $scope.getStorePrintPreference();
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.getBillInfoByBillNumber = function () {
@@ -5486,7 +6355,19 @@
 
         $scope.errorItemCallback = function (data, options) {
             console.log(data);
-            if (data.Error.Message) {
+            if (!$scope.currentcontext.id || $scope.currentcontext.id <= 0) {
+                $scope.item.PatientBillStatusId = 1;
+                $scope.IsApproved = false;
+                $scope.canShowSaveBtn = true;
+                $scope.canShowSaveapproveBtn = true;
+            }
+            if (typeof $scope.applyVisibilityRules === 'function') {
+                $scope.applyVisibilityRules();
+            }
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
+            if (data && data.Error && data.Error.Message) {
                 var message = data.Error.Message;
 
 
@@ -5639,7 +6520,6 @@
             if ($scope.currentcontext.TotBalanceAmt === 0) {
                 $scope.item.IsPaidFully = true;
             }
-            $scope.IsApproved = true;
             var confirmOptions = {
                 headingKey: 'common.confirm-modal-header.lbl',
                 messageKey: 'Do You Want to approve this Sale?',
@@ -5836,24 +6716,48 @@
         };
 
         $scope.saveItem = function (StatusId) {
+            var prevPatientBillStatusId = $scope.item.PatientBillStatusId || 1;
+            var prevIsApproved = $scope.IsApproved;
+            var revertState = function () {
+                $scope.item.PatientBillStatusId = prevPatientBillStatusId;
+                $scope.IsApproved = prevIsApproved;
+                if (typeof $scope.applyVisibilityRules === 'function') {
+                    $scope.applyVisibilityRules();
+                }
+                if (typeof $scope.refreshReactProps === 'function') {
+                    $scope.refreshReactProps();
+                }
+            };
 
             if (isNaN($scope.currentcontext.ReceiptAmt)) {
                 utl.Alert.showErrorMsg($translate.instant('Please Enter Valid Amount'));
+                revertState();
+                return false;
+            }
+            var maxNetAllowed = Math.max(0, parseFloat($scope.currentcontext.TotNetAmount || 0) - parseFloat($scope.currentcontext.PaidAmt || 0));
+            if (maxNetAllowed > 0 && parseFloat($scope.currentcontext.ReceiptAmt || 0) > (maxNetAllowed + 0.05)) {
+                utl.Alert.showErrorMsg($translate.instant('billing.pharmacy-return.receivingamt.lbl'));
+                revertState();
                 return false;
             }
             if ($scope.item.IsMultiplePayment == false || !$scope.item.IsMultiplePayment) {
-                if (savehitcompleted == 1) return false;
+                if (savehitcompleted == 1) {
+                    revertState();
+                    return false;
+                }
             }
 
             if ($scope.currentcontext.DiscountApprovedBy > 0) {
                 if (!$scope.item.GuarantorTypeId || $scope.item.GuarantorTypeId == -1) {
                     utl.Alert.showErrorMsg($translate.instant('Please Select Discount Category'));
+                    revertState();
                     return;
                 }
             }
 
             if (!$scope.currentfilter.PatientId) {
                 utl.Alert.showErrorMsg($translate.instant('Please Select Valid Patient'));
+                revertState();
                 return;
             }
 
@@ -5861,6 +6765,7 @@
                 // $scope.item.IsMultiplePayment = true;
                 if ($scope.PaymentAdjustmentDetails.length == 0) {
                     utl.Alert.showErrorMsg('Please Adjust Advance Amount');
+                    revertState();
                     return false;
                 }
             }
@@ -5869,6 +6774,7 @@
                     $scope.currentcontext.PaymentTypeId == 11) {
                     if (!$scope.item.BankId) {
                         utl.Alert.showErrorMsg($translate.instant('Please Select Bank!...'));
+                        revertState();
                         return;
                     }
                     // if (!$scope.item.CardTypeId) {
@@ -5883,12 +6789,14 @@
                 if ($scope.currentcontext.PaymentTypeId == 5 || $scope.currentcontext.PaymentTypeId == 6) {
                     if (!$scope.item.AuthorizeNumber || $scope.item.AuthorizeNumber == '') {
                         utl.Alert.showErrorMsg($translate.instant('Please Enter AuthCode!...'));
+                        revertState();
                         return;
                     }
                 }
                 if ($scope.currentcontext.PaymentTypeId == 11 || $scope.currentcontext.PaymentTypeId == 12) {
                     if (!$scope.item.UPIRefNumber || $scope.item.UPIRefNumber == '') {
                         utl.Alert.showErrorMsg($translate.instant('Please Enter AuthCode!...'));
+                        revertState();
                         return;
                     }
                 }
@@ -5912,11 +6820,13 @@
                 if (dReceiptAmt < dTotNetAmount && $scope.currentcontext.TotBalanceAmt > 0) {
                     if ($scope.currentfilter.DiscountModeId == 2 && parseFloat($scope.currentcontext.BillDiscount) < 100) {
                         utl.Alert.showErrorMsg($translate.instant('billing.opbilling-list.selectdueapprover.lbl'));
+                        revertState();
                         return false;
                     } else if ($scope.currentfilter.DiscountModeId == 1 &&
                         parseFloat($scope.currentcontext.BillDiscount) < parseFloat($scope.currentcontext.TotNetAmount) &&
                         (!$scope.item.IsMultiplePayment || $scope.item.IsMultiplePayment == false)) {
                         utl.Alert.showErrorMsg($translate.instant('billing.opbilling-list.selectdueapprover.lbl'));
+                        revertState();
                         return false;
                     }
                 }
@@ -5926,6 +6836,7 @@
                 utl.Alert.showErrorMsg($translate.instant('billing.pharmacy.itemalert.lbl'));
 
                 $('#pid').focus();
+                revertState();
                 return false;
             } else {
                 var ItemCount = 0;
@@ -6107,13 +7018,13 @@
 
                 if (ItemCount == 1) {
                     utl.Alert.showErrorMsg($translate.instant('billing.pharmacy.itemalert.lbl'));
-
+                    revertState();
                     return false;
                 }
 
                 if (ItemCheck == 1) {
                     utl.Alert.showErrorMsg($translate.instant('billing.pharmacy.qtyalert.lbl') + ItemName);
-
+                    revertState();
                     return false;
                 }
                 /*
@@ -6269,7 +7180,7 @@
                 }
             } else {
                 if ($scope.currentcontext.ReceiptAmt > 0) {
-                    if ($scope.PatientPaymentDetails && $scope.PatientPaymentDetails.length > 0) {
+                    if (!$scope.item.IsMultiplePayment && $scope.PatientPaymentDetails && $scope.PatientPaymentDetails.length === 1) {
                         for (var pi = 0, len = $scope.PatientPaymentDetails.length; pi < len; pi++) {
                             if ($scope.PatientPaymentDetails[pi].Id == 0 && $scope.PatientPaymentDetails[pi].ReceiptTypeId == 2 && $scope.PatientPaymentDetails[pi].ReceiptStatusId == 1) {
                                 $scope.PatientPaymentDetails[pi].AmountPaid = $scope.currentcontext.ReceiptAmt;
@@ -6304,6 +7215,7 @@
                 if ($scope.cashcountermandatory == 1 && paymentlines.length > 0) {
                     if ($scope.UserCounterInfo.length == 0) {
                         utl.Alert.showErrorMsg($translate.instant('Please Start Cash Counter'));
+                        revertState();
                         return false;
                     }
                 }
@@ -6334,6 +7246,9 @@
                 };
 
                 utl.Http.doAction(options);
+            } else {
+                revertState();
+                return false;
             }
         };
 
@@ -7417,10 +8332,18 @@
 
         function postsearchpharmacybatch() {
             $scope.autosearchpopup = 1;
+            var stopDays = $scope.currentfilter.ExpiryPriorStopDays || 0;
+            if (!stopDays && $scope.lookup && $scope.lookup.UserStores) {
+                for (var us in $scope.lookup.UserStores) {
+                    if ($scope.lookup.UserStores[us].Id == $scope.currentfilter.StoreMasterId && $scope.lookup.UserStores[us].StoreMaster) {
+                        stopDays = $scope.lookup.UserStores[us].StoreMaster.ExpiryPriorStopDays || 0;
+                        break;
+                    }
+                }
+            }
+
             for (var idx in vm.pharmacybatchcontrolconfig.result) {
                 var item = vm.pharmacybatchcontrolconfig.result[idx];
-                var SerialItems = null;
-                var SerialQuantity = 0;
                 item.ItemCode = '(' + item.ItemCode + ')';
                 item.ItemName = item.ItemName;
                 if (item.ItemMaster) {
@@ -7429,13 +8352,18 @@
                     item.GenericName = '';
                 }
                 item.RackName = item.RackName;
-                item.StockInHand = item.Quantity;
-                item.MrPrice = item.ItemMaster.MrPrice;
-                item.IsNonClaimable = item.ItemMaster.IsNonClaimable;
-                if (item.IsNonClaimable == false) {
-                    item.Claimable = 'Y'
+                var expDays = GetExpiryDays(item.ExpiryDate);
+                if (Number(item.Quantity) > 0 && expDays > stopDays) {
+                    item.StockInHand = item.Quantity;
                 } else {
-                    item.Claimable = 'N'
+                    item.StockInHand = 0;
+                }
+                item.MrPrice = item.ItemMaster ? item.ItemMaster.MrPrice : (item.Mrp || 0);
+                item.IsNonClaimable = item.ItemMaster ? item.ItemMaster.IsNonClaimable : false;
+                if (item.IsNonClaimable == false) {
+                    item.Claimable = 'Y';
+                } else {
+                    item.Claimable = 'N';
                 }
             }
         }
@@ -7681,60 +8609,53 @@
 
         function postsearchpharmacyitem() {
             $scope.autosearchpopup = 1;
+            var stopDays = $scope.currentfilter.ExpiryPriorStopDays || 0;
+            if (!stopDays && $scope.lookup && $scope.lookup.UserStores) {
+                for (var us in $scope.lookup.UserStores) {
+                    if ($scope.lookup.UserStores[us].Id == $scope.currentfilter.StoreMasterId && $scope.lookup.UserStores[us].StoreMaster) {
+                        stopDays = $scope.lookup.UserStores[us].StoreMaster.ExpiryPriorStopDays || 0;
+                        break;
+                    }
+                }
+            }
+
             for (var idx in vm.pharmacyitemcontrolconfig.result) {
                 var item = vm.pharmacyitemcontrolconfig.result[idx];
                 var SerialItems = null;
                 var SerialQuantity = 0;
                 item.ItemCode = '(' + item.ItemCode + ')';
                 item.ItemName = item.ItemName;
-                /*
-                if (item.ItemMaster.ProductType !== null) {
-                    item.ProductTypeName = item.ItemMaster.ProductType.ProductTypeName;
-                } else {
-                    item.ProductTypeName = '';
-                }
-                */
                 if (item.ItemMaster) {
                     item.GenericName = item.ItemMaster.GenericName;
                 } else {
                     item.GenericName = '';
                 }
-                /*
-                if (item.ItemMaster.GenericMaster !== null) {
-                    item.GenericName = item.ItemMaster.GenericMaster.GenericName;
-                } else {
-                    item.GenericName = '';
-                }
-                */
-                /*
-                item.ManufacturerName = item.ManufacturerName;
-                */
-                /*
-                if (item.ItemMaster.Manufacturer !== null) {
-                    item.ManufacturerName = item.ItemMaster.Manufacturer.VendorName;
-                } else {
-                    item.ManufacturerName = '';
-                }
-                */
                 item.RackName = item.RackName;
-                if (item.ItemMaster.StockItem !== null) {
+                if (item.ItemMaster && item.ItemMaster.StockItem !== null) {
                     if (item.ItemMaster.StockItem &&
+                        item.ItemMaster.StockItem.StockSerialItems &&
                         item.ItemMaster.StockItem.StockSerialItems.length > 0) {
                         SerialItems = item.ItemMaster.StockItem.StockSerialItems;
                         for (var batid = 0; batid < SerialItems.length; batid++) {
-                            SerialQuantity = SerialQuantity + SerialItems[batid].Quantity;
+                            var sItem = SerialItems[batid];
+                            if (Number(sItem.Quantity) > 0) {
+                                var expDays = GetExpiryDays(sItem.ExpiryDate);
+                                if (expDays > stopDays) {
+                                    SerialQuantity = SerialQuantity + sItem.Quantity;
+                                }
+                            }
                         }
                     }
                     item.StockInHand = SerialQuantity;
                 } else {
                     item.StockInHand = 0;
                 }
-                item.MrPrice = item.ItemMaster.MrPrice;
-                item.IsNonClaimable = item.ItemMaster.IsNonClaimable;
+                item.MrPrice = item.ItemMaster ? item.ItemMaster.MrPrice : 0;
+                item.IsNonClaimable = item.ItemMaster ? item.ItemMaster.IsNonClaimable : false;
                 if (item.IsNonClaimable == false) {
-                    item.Claimable = 'Y'
+                    item.Claimable = 'Y';
                 } else {
-                    item.Claimable = 'N'
+                    item.Claimable = 'N';
                 }
             }
 
@@ -7924,29 +8845,66 @@
             $scope.lookup = hasError ? {} : data;
             forEach(data, function (value, key) {
                 $scope.lookup[key] = value;
-                if (key == 'UserStores' && $scope.currentfilter.StoreMasterId === 0) {
-                    for (var usidx in $scope.lookup.UserStores) {
-                        if ($scope.lookup.UserStores[usidx].IsDefault) {
-                            $scope.currentfilter.StoreMasterId = $scope.lookup.UserStores[usidx].Id;
-                            $scope.currentfilter.StoreTypeId = $scope.lookup.UserStores[usidx].StoreMaster.StoreTypeId;
-                            $scope.currentfilter.StoreSubTypeId = $scope.lookup.UserStores[usidx].StoreMaster.StoreSubTypeId;
-                            $scope.currentfilter.SequenceOptionId = $scope.lookup.UserStores[usidx].StoreMaster.SequenceOptionId;
-                            $scope.currentfilter.IsStoreSeparateSequence = $scope.lookup.UserStores[usidx].StoreMaster.IsSeqbasedStore;
-                            $scope.currentfilter.ExpiryWarningDays = $scope.lookup.UserStores[usidx].StoreMaster.ExpiryWarningDays;
-                            $scope.currentfilter.ExpiryPriorStopDays = $scope.lookup.UserStores[usidx].StoreMaster.ExpiryPriorStopDays;
+                if (key == 'UserStores') {
+                    var savedStoreId = null;
+                    try {
+                        savedStoreId = parseInt(localStorage.getItem('SELECTED_PHARMACY_STORE_ID'), 10);
+                    } catch (e) {}
+
+                    var targetStore = null;
+
+                    // 1. If user previously selected a store and this is a new bill (id == 0 or empty), load the saved store
+                    if (savedStoreId && (!$stateParams.id || $stateParams.id == 0 || $scope.currentfilter.StoreMasterId === savedStoreId)) {
+                        for (var usidx in $scope.lookup.UserStores) {
+                            if ($scope.lookup.UserStores[usidx].Id === savedStoreId) {
+                                targetStore = $scope.lookup.UserStores[usidx];
+                                break;
+                            }
                         }
                     }
-                    if ($scope.currentfilter.StoreMasterId === 0) {
-                        $scope.currentfilter.StoreMasterId = value[0].Id;
-                        $scope.currentfilter.StoreTypeId = value[0].StoreMaster.StoreTypeId;
-                        $scope.currentfilter.StoreSubTypeId = value[0].StoreMaster.StoreSubTypeId;
-                        $scope.currentfilter.SequenceOptionId = value[0].StoreMaster.SequenceOptionId;
-                        $scope.currentfilter.IsStoreSeparateSequence = value[0].StoreMaster.IsSeqbasedStore;
-                        $scope.currentfilter.ExpiryWarningDays = value[0].StoreMaster.ExpiryWarningDays;
-                        $scope.currentfilter.ExpiryPriorStopDays = value[0].StoreMaster.ExpiryPriorStopDays;
+
+                    // 2. If existing bill has specific StoreMasterId, match it
+                    if (!targetStore && $scope.currentfilter.StoreMasterId > 0) {
+                        for (var usidx in $scope.lookup.UserStores) {
+                            if ($scope.lookup.UserStores[usidx].Id === $scope.currentfilter.StoreMasterId) {
+                                targetStore = $scope.lookup.UserStores[usidx];
+                                break;
+                            }
+                        }
+                    }
+
+                    // 3. Fallback to default store if neither matched
+                    if (!targetStore) {
+                        for (var usidx in $scope.lookup.UserStores) {
+                            if ($scope.lookup.UserStores[usidx].IsDefault) {
+                                targetStore = $scope.lookup.UserStores[usidx];
+                                break;
+                            }
+                        }
+                    }
+
+                    // 4. Fallback to first store
+                    if (!targetStore && $scope.lookup.UserStores && $scope.lookup.UserStores.length > 0) {
+                        targetStore = $scope.lookup.UserStores[0];
+                    }
+
+                    if (targetStore) {
+                        $scope.currentfilter.StoreMasterId = targetStore.Id;
+                        if (targetStore.StoreMaster) {
+                            $scope.currentfilter.StoreTypeId = targetStore.StoreMaster.StoreTypeId;
+                            $scope.currentfilter.StoreSubTypeId = targetStore.StoreMaster.StoreSubTypeId;
+                            $scope.currentfilter.SequenceOptionId = targetStore.StoreMaster.SequenceOptionId;
+                            $scope.currentfilter.IsStoreSeparateSequence = targetStore.StoreMaster.IsSeqbasedStore;
+                            $scope.currentfilter.ExpiryWarningDays = targetStore.StoreMaster.ExpiryWarningDays;
+                            $scope.currentfilter.ExpiryPriorStopDays = targetStore.StoreMaster.ExpiryPriorStopDays;
+                        }
+                        try {
+                            localStorage.setItem('SELECTED_PHARMACY_STORE_ID', String(targetStore.Id));
+                        } catch (e) {}
                     }
                     $scope.getStorePrintPreference();
                     /* $scope.getStoreStaffDiscounts(); */
+                    $scope.refreshReactProps();
                 }
                 if (key == 'FacilityPreference') {
                     $scope.item.PreferedRoundOff = value[0].PreferenceValue;
@@ -7966,6 +8924,9 @@
             });
             // $scope.getUserBills();
             loadData();
+            if (typeof $scope.refreshReactProps === 'function') {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.initLookup = function () {
@@ -9406,6 +10367,27 @@
         if ($scope.cashcountermandatory == 1) {
             $scope.checkCounterStatusByUserId();
         }
+
+        if (typeof $scope.initLookup === 'function') {
+            $scope.initLookup();
+        }
+
+        $scope.$watch(function () {
+            if ($rootScope && $rootScope.FacilitySettings && $rootScope.FacilitySettings.billing) {
+                return $rootScope.FacilitySettings.billing.enableroundoff;
+            }
+            return undefined;
+        }, function (newVal) {
+            if (newVal !== undefined) {
+                $scope.enableroundoff = getEnableRoundOffSetting();
+                if (typeof $scope.CalculateNetAmt === 'function') {
+                    $scope.CalculateNetAmt();
+                }
+                if (typeof $scope.refreshReactProps === 'function') {
+                    $scope.refreshReactProps();
+                }
+            }
+        });
         /* Pharmacy  Sales - Shortcut Keys - Start */
         function keyupHandler(e) {
             var kCode = e.keyCode;

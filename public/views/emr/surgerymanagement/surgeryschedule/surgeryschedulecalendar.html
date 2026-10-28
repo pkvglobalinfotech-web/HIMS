@@ -1,241 +1,515 @@
 <style>
-    .status-legend {
-        display: flex;
-        gap: 1rem;
-        padding: 10px 15px;
-        background-color: #f5f5f5;
-        border-radius: 6px;
-        margin-bottom: 10px;
-    }
+/* ==========================================================================
+   MediFlow Enterprise Design System — Surgery Schedule FullCalendar
+   ========================================================================== */
 
-    .status-card {
-        display: flex;
-        align-items: center;
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-size: 14px;
-        color: #fff;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
+.surgery-calendar-page {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #0f172a;
+    padding: 16px 20px 80px 20px;
+}
 
-    .status-card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    }
+/* ─── Header Card ────────────────────────────────────────────────────────── */
+.surgery-cal-header-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
 
-    .status-scheduled {
-        background-color: #f39c12;
-    }
+.surgery-cal-title-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
 
-    .status-confirmed {
-        background-color: #00c0ef;
-    }
+.surgery-cal-icon-badge {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
 
-    .status-cancelled {
-        background-color: #dd4b39;
-    }
+.surgery-cal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
 
-    .status-completed {
-        background-color: #00a65a;
-    }
+.surgery-cal-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+    margin-bottom: 0;
+}
 
-    .status-all {
-        background-color: #290be9;
-    }
+.surgery-cal-tag {
+    background-color: #0284c718;
+    color: #0284c7;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid #0284c730;
+    display: inline-block;
+    margin-left: 8px;
+}
 
-    input[type="checkbox"] {
-        appearance: none;
-        -webkit-appearance: none;
-        background-color: #00ffff;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        position: relative;
-    }
+.surgery-cal-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
 
-    /* input[type="checkbox"]:checked {
-        background-color: red;
-        border-color: red;
-    } */
-    label.Scheduled input[type="checkbox"]:checked {
-        background-color: #00c0ef;
-        border-color: #00c0ef;
-    }
+.surgery-btn-fetch {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    transition: all 0.2s ease;
+}
+.surgery-btn-fetch:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+}
 
-    label.Confirmed input[type="checkbox"]:checked {
-        background-color: #00c0ef;
-        border-color: #00c0ef;
-    }
+.surgery-btn-new-schedule {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 20px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+    transition: all 0.2s ease;
+}
+.surgery-btn-new-schedule:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+}
 
-    label.Cancelled input[type="checkbox"]:checked {
-        background-color: #dd4b39;
-        border-color: #dd4b39;
-    }
+/* ─── Sidebar Cards ──────────────────────────────────────────────────────── */
+.surgery-cal-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
 
-    label.Completed input[type="checkbox"]:checked {
-        background-color: #00a65a;
-        border-color: #00a65a;
-    }
+.surgery-sidebar-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
 
-    label.All input[type="checkbox"]:checked {
-        background-color: #0027ff;
-        border-color: #0027ff;
-    }
+.surgery-sidebar-heading {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+}
 
-    input[type="checkbox"]:checked::after {
-        content: '✔';
-        color: rgb(255, 255, 255);
-        position: absolute;
-        top: -3px;
-        left: 2px;
-        font-size: 14px;
-    }
+/* jQuery UI Datepicker Modernization */
+#datepicker {
+    width: 100% !important;
+}
+#datepicker .ui-datepicker {
+    width: 100% !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+    font-family: inherit !important;
+    box-shadow: none !important;
+}
+#datepicker .ui-datepicker-header {
+    background: #f8fafc !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 0 !important;
+}
+#datepicker .ui-datepicker-title {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+}
+#datepicker .ui-datepicker-prev,
+#datepicker .ui-datepicker-next {
+    cursor: pointer !important;
+    border-radius: 6px !important;
+    top: 7px !important;
+}
+#datepicker .ui-datepicker-calendar th {
+    color: #64748b !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 6px 0 !important;
+}
+#datepicker .ui-datepicker-calendar td {
+    padding: 2px !important;
+}
+#datepicker .ui-datepicker-calendar td a {
+    border: none !important;
+    background: transparent !important;
+    text-align: center !important;
+    border-radius: 6px !important;
+    color: #334155 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    padding: 5px 0 !important;
+    transition: all 0.15s ease !important;
+}
+#datepicker .ui-datepicker-calendar td a:hover {
+    background: #eff6ff !important;
+    color: #2563eb !important;
+}
+#datepicker .ui-datepicker-calendar td a.ui-state-active {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+#datepicker .ui-datepicker-buttonpane {
+    border-top: 1px solid #f1f5f9 !important;
+    margin: 8px 0 0 0 !important;
+    padding: 6px 0 0 0 !important;
+}
+#datepicker .ui-datepicker-current {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1d4ed8 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    cursor: pointer !important;
+}
 
-    input:focus-visible {
-        border: unset !important;
-        outline: unset !important;
-    }
+/* OT Rooms Checkbox List */
+.surgery-room-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 4px;
+}
+.surgery-room-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+    color: #334155;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    user-select: none;
+    margin: 0;
+    font-weight: 500;
+}
+.surgery-room-item:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+.surgery-room-item input[type="checkbox"] {
+    accent-color: #2563eb;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+}
 
-    input:focus {
-        outline: unset !important;
-        border: unset !important;
-    }
+/* Status Legend Items */
+.surgery-status-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.surgery-status-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    user-select: none;
+    margin: 0;
+}
+.surgery-status-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.surgery-status-item input[type="checkbox"] {
+    accent-color: #ffffff;
+    cursor: pointer;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+}
 
-    .status-checkboxes label {
-        display: flex;
-        align-items: center;
-        height: 24px;
-    }
+.status-scheduled { background: #f59e0b; }
+.status-confirmed { background: #0284c7; }
+.status-completed { background: #10b981; }
+.status-cancelled { background: #ef4444; }
+.status-all { background: #2563eb; }
 
-    .status-checkboxes label input {
-        margin-right: 9px;
-    }
+/* ─── Calendar Main Container ────────────────────────────────────────────── */
+.surgery-cal-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+    min-height: 720px;
+}
 
-    .fooder-bgs {
-        margin-bottom: 150px !important;
-        min-height: 0%;
-    }
-
-    .fc-toolbar.fc-header-toolbar {
-        width: 100%;
-        /* position: fixed;
-        margin-top: -50px; */
-        /* left: 50px; */
-        background: #f3f4f5;
-        padding: 10px;
-        border-bottom: 1px solid #e0e0e0 !important;
-        z-index: 99;
-    }
-
-    /* .fc-left .fc-button-group {
-        margin-left: 100px !important;
-    } */
-
-    /* button.ui-datepicker-current.ui-state-default.ui-priority-secondary.ui-corner-all {
-        position: fixed;
-        margin-top: -306px;
-        z-index: 999;
-    } */
-
-    .fc-left .fc-button-group button {
-        background: unset;
-        box-shadow: unset !important;
-        background-image: unset;
-        border: unset !important;
-        text-shadow: unset !important;
-    }
-
-    .fc-toolbar .fc-center {
-        display: block;
-    }
-
-    .fc-toolbar .fc-center h2 {
-        display: block;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        text-transform: capitalize !important;
-        font-size: 1.4em !important;
-        color: #4f5964 !important;
-        margin-top: 4px;
-    }
-
-    th.fc-day-header {
-        text-align: -webkit-center;
-    }
-
-    th.fc-widget-header span {
-        display: block;
-        width: 40%;
-        font-size: 15px !important;
-        font-weight: 400;
-    }
-
-    .fc-view-container td {
-        border: 1px solid #ddd !important;
-    }
-
-    td.fc-more-cell {
-        line-height: 10px;
-        text-align: center;
-        border: unset !important;
-    }
-
-    a.fc-more {
-        color: gray;
-    }
+/* FullCalendar Modernization Overrides */
+.fc {
+    font-family: inherit !important;
+}
+.fc-toolbar.fc-header-toolbar {
+    margin-bottom: 20px !important;
+    padding-bottom: 16px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    background: transparent !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+.fc-toolbar h2 {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 !important;
+    text-transform: capitalize !important;
+}
+.fc-button {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 7px 16px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+    text-shadow: none !important;
+    height: auto !important;
+    transition: all 0.15s ease !important;
+    outline: none !important;
+}
+.fc-button:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+.fc-state-active {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35) !important;
+}
+.fc-state-disabled {
+    opacity: 0.55 !important;
+    cursor: not-allowed !important;
+}
+.fc-head th.fc-day-header {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 10px 4px !important;
+    border-color: #e2e8f0 !important;
+    text-align: center !important;
+}
+.fc-view-container td {
+    border-color: #e2e8f0 !important;
+}
+.fc-day-number {
+    font-weight: 600 !important;
+    color: #334155 !important;
+    padding: 6px 10px !important;
+    font-size: 12.5px !important;
+}
+.fc-today {
+    background: #f0f9ff !important;
+}
+.fc-event {
+    border-radius: 6px !important;
+    padding: 3px 7px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+    cursor: pointer !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+.fc-event:hover {
+    transform: translateY(-1px) scale(1.02) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+}
+.fc-time-grid .fc-slats td {
+    height: 26px !important;
+    border-color: #f1f5f9 !important;
+}
+.fc-time-grid-event {
+    margin-bottom: 2px !important;
+}
+.fc-highlight {
+    background: #93c5fd !important;
+    opacity: 0.4 !important;
+}
+.fc-tooltip {
+    position: absolute;
+    z-index: 10001;
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    padding: 12px 16px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3) !important;
+    border: 1px solid #334155 !important;
+    pointer-events: none !important;
+}
 </style>
-<div class="row">
-    <div class="col-sm-7">
-        <h4 class="page-header mt0" translate="Surgery Schedule Calendar"></h4>
-    </div>
-    <div class="col-sm-3">
-        <label class="col-sm-12" translate="Doctor"></label>
-        <div class="col-sm-12">
-            <multiselectchk list="lookup.Doctor" selected="currentfilter.DoctorId">
-            </multiselectchk>
-        </div>
-    </div>
-    <div class="col-sm-2">
-        <label class="col-sm-12" translate="Click"></label>
-        <div class="col-sm-12">
-            <button type="button" class="draftbutton" translate="Fetch" ng-click="getList()"></button>
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-sm-2">
-        <label class="col-sm-12" translate="Choose a Date"></label>
-        <div id="datepicker" style="margin-top: 43px;"></div>
-        <!-- Ot Rooms -->
-        <label class="col-sm-12 mt10" translate="OT Rooms" style="color: #033cb8;font-size: 20px;"></label>
-        <div class="col-sm-12" style="max-height: 200px; overflow-y: auto;">
-            <div ng-repeat="room in lookup.SurgeryRoom" ng-if="room.Id !== -1">
-                <label>
-                    <input type="checkbox" ng-checked="currentfilter.OTRoomId.indexOf(room.Id) > -1"
-                        ng-click="toggleRoomSelection(room.Id)">
-                    {{ room.Name }}
-                </label>
+
+<div class="surgery-calendar-page">
+    <!-- Header Banner -->
+    <div class="surgery-cal-header-card">
+        <div class="surgery-cal-title-section">
+            <div class="surgery-cal-icon-badge">
+                <i class="fa fa-calendar-check-o"></i>
+            </div>
+            <div>
+                <div style="display: flex; align-items: center;">
+                    <h2 class="surgery-cal-title" translate="Surgery Schedule Calendar">Surgery Schedule Calendar</h2>
+                    <span class="surgery-cal-tag">OT Scheduling</span>
+                </div>
+                <p class="surgery-cal-subtitle">
+                    Interactive theatre schedule, doctor assignment & operative time slot monitoring
+                </p>
             </div>
         </div>
-        <div class="col-sm-12" style="max-height: 200px; overflow-y: auto;">
-            <label translate="Surgery Status" style="color: #023199;font-size: 20px;"></label>
-            <div class="status-checkboxes">
-                <div ng-repeat="status in statusOptions">
-                    <label class="{{status.name}}">
-                        <input type="checkbox" ng-model="status.selected" ng-change="updateStatusFilters()">
-                        {{status.name}}
-                    </label>
+
+        <!-- Header Actions: Doctor Filter, Fetch & Schedule Button -->
+        <div class="surgery-cal-actions">
+            <div style="min-width: 220px;">
+                <label style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px; display: block;" translate="Doctor">Doctor / Surgeon</label>
+                <multiselectchk list="lookup.Doctor" selected="currentfilter.DoctorId"></multiselectchk>
+            </div>
+
+            <button type="button" class="surgery-btn-fetch" ng-click="getList()">
+                <i class="fa fa-refresh"></i>
+                <span translate="Fetch">Fetch</span>
+            </button>
+
+            <button type="button" class="surgery-btn-new-schedule" ng-click="addNew({ isEmptySlot: true })">
+                <i class="fa fa-plus-circle"></i>
+                <span>+ Schedule Surgery</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content: Left Filters & Right FullCalendar -->
+    <div class="row">
+        <!-- Left Sidebar: Datepicker, OT Rooms, Status Filters -->
+        <div class="col-sm-3 col-md-3">
+            <div class="surgery-cal-sidebar">
+                <!-- Choose a Date Datepicker -->
+                <div class="surgery-sidebar-card">
+                    <div class="surgery-sidebar-heading">
+                        <i class="fa fa-calendar" style="color: #0284c7;"></i>
+                        <span translate="Choose a Date">Choose a Date</span>
+                    </div>
+                    <div id="datepicker"></div>
+                </div>
+
+                <!-- OT Rooms Filter -->
+                <div class="surgery-sidebar-card">
+                    <div class="surgery-sidebar-heading">
+                        <i class="fa fa-hospital-o" style="color: #0284c7;"></i>
+                        <span translate="OT Rooms">OT Rooms</span>
+                    </div>
+                    <div class="surgery-room-list">
+                        <div ng-repeat="room in lookup.SurgeryRoom" ng-if="room.Id !== -1">
+                            <label class="surgery-room-item">
+                                <input type="checkbox" ng-checked="currentfilter.OTRoomId.indexOf(room.Id) > -1"
+                                    ng-click="toggleRoomSelection(room.Id)">
+                                <span>{{ room.Name }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Surgery Status Filter -->
+                <div class="surgery-sidebar-card">
+                    <div class="surgery-sidebar-heading">
+                        <i class="fa fa-tags" style="color: #0284c7;"></i>
+                        <span translate="Surgery Status">Surgery Status</span>
+                    </div>
+                    <div class="surgery-status-legend">
+                        <div ng-repeat="status in statusOptions">
+                            <label class="surgery-status-item status-{{status.name | lowercase}}">
+                                <span>{{status.name}}</span>
+                                <input type="checkbox" ng-model="status.selected" ng-change="updateStatusFilters()">
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-sm-10">
-        <div id="calendar" calendar></div>
+
+        <!-- Right Main: FullCalendar Container -->
+        <div class="col-sm-9 col-md-9">
+            <div class="surgery-cal-container">
+                <div id="calendar" calendar></div>
+            </div>
+        </div>
     </div>
 </div>
-<div class="fooder-bgs">

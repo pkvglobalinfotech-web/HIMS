@@ -57,24 +57,25 @@ export const colors = {
   sidebarActiveBar: '#2563eb',
 
   // Background hierarchy
-  background: {
+  background: makeColorToken('#f8fafc', {
     primary:   '#ffffff',
     secondary: '#f8fafc',
     tertiary:  '#f1f5f9',
     inverse:   '#0f172a',
-  },
+  }),
 
   // Text hierarchy
-  text: {
+  text: makeColorToken('#0f172a', {
     primary:   '#0f172a',
     secondary: '#475569',
     muted:     '#475569',
     tertiary:  '#94a3b8',
     inverse:   '#ffffff',
     disabled:  '#cbd5e1',
-  },
+  }),
 
   // Neutrals — Slate scale
+  textPrimary:   '#0f172a',   // slate-900
   textMain:      '#0f172a',   // slate-900
   textBody:      '#1e293b',   // slate-800
   textMuted:     '#475569',   // slate-600
@@ -162,6 +163,17 @@ export const colors = {
 // TYPOGRAPHY
 // ─────────────────────────────────────────────────────────────
 export const typography = {
+  fontSize: {
+    xs:   '11px',
+    sm:   '12px',
+    md:   '13px',
+    base: '14px',
+    lg:   '16px',
+    xl:   '18px',
+    xxl:  '20px',
+    '2xl': '20px',
+    '3xl': '24px',
+  },
   fontSizes: {
     xs:   '11px',
     sm:   '12px',
@@ -169,6 +181,7 @@ export const typography = {
     base: '14px',
     lg:   '16px',
     xl:   '18px',
+    xxl:  '20px',
     '2xl': '20px',
     '3xl': '24px',
   },
@@ -177,6 +190,14 @@ export const typography = {
     medium:   500,
     semibold: 600,
     bold:     700,
+    extrabold: 800,
+  },
+  fontWeight: {
+    normal:   400,
+    medium:   500,
+    semibold: 600,
+    bold:     700,
+    extrabold: 800,
   },
 
   // Font families
@@ -221,10 +242,13 @@ export const spacing = {
   xl:   '24px',   // 6
   6:    '24px',
   xxl:  '32px',   // 8
+  '2xl': '32px',
   8:    '32px',
   10:   '40px',
   xxxl: '48px',   // 12
+  '3xl': '48px',
   12:   '48px',
+  '4xl': '64px',
   16:   '64px',
 } as const;
 
@@ -242,6 +266,8 @@ export const radii = {
   '3xl': '24px',
   full:  '9999px',
 } as const;
+
+export const radius = radii;
 
 // ─────────────────────────────────────────────────────────────
 // SHADOWS
@@ -328,3 +354,20 @@ export const sidebar = {
   collapsedWidth: '64px',
   topbarHeight:  '60px',
 } as const;
+
+export const tokens = {
+  colors,
+  typography,
+  spacing,
+  radii,
+  shadows,
+  transitions,
+  zIndex,
+  breakpoints,
+  controlHeight,
+  controlHeightDefault,
+  sidebar,
+};
+
+export default tokens;
+

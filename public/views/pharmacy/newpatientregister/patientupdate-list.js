@@ -12,6 +12,9 @@
             PatientStatusId: 2,
             RegisteredDate: utl.Formatter.getCurrentDate()
         };
+        $scope.selectedPatient = null;
+        $scope.isLoading = false;
+
         $timeout(function () {
             removeFloatingNav();
         }, 100);
@@ -19,26 +22,123 @@
         function removeFloatingNav() {
             $rootScope.app.layout.isCollapsed = true;
         }
+
+        // =========================================================================
+        // REACT MODERNIZATION BRIDGE: PatientUpdateListScreen
+        // =========================================================================
+        $scope.refreshReactProps = function () {
+            var doUpdate = function () {
+                $scope.reactProps = {
+                    gridData: angular.copy(vm.gridConfig.data || []),
+                    pagerObj: angular.copy(vm.gridConfig.pagerObj || { totalItems: 0, currentPage: 1, startIndex: 0, pageSize: 25 }),
+                    currentfilter: angular.copy($scope.currentfilter || {}),
+                    lookup: angular.copy($scope.lookup || {}),
+                    selectedPatient: angular.copy($scope.selectedPatient || null),
+                    isLoading: !!$scope.isLoading
+                };
+            };
+            if ($scope.$$phase) {
+                doUpdate();
+            } else {
+                $scope.$evalAsync(doUpdate);
+            }
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            $scope.$evalAsync(function () {
+                switch (actionName) {
+                    case 'dateChange':
+                        if (payload && payload.date !== undefined) {
+                            $scope.currentfilter.RegisteredDate = payload.date;
+                            $scope.currentfilter.Patientinfo = null;
+                            $scope.selectedPatient = null;
+                            vm.gridConfig.pagerObj.currentPage = 1;
+                            $scope.getList();
+                        }
+                        break;
+                    case 'statusChange':
+                        if (payload && payload.statusId !== undefined) {
+                            $scope.currentfilter.PatientStatusId = payload.statusId;
+                            vm.gridConfig.pagerObj.currentPage = 1;
+                            $scope.getList();
+                        }
+                        break;
+                    case 'patientSelect':
+                        if (payload) {
+                            $scope.selectedPatient = (typeof payload === 'object') ? payload : null;
+                            $scope.currentfilter.Patientinfo = (payload && (payload.Id || payload.MRN)) ? (payload.Id || payload.MRN) : payload;
+                            $scope.currentfilter.RegisteredDate = null;
+                            vm.gridConfig.pagerObj.currentPage = 1;
+                            $scope.getList();
+                        }
+                        break;
+                    case 'patientClear':
+                        $scope.selectedPatient = null;
+                        $scope.currentfilter.Patientinfo = null;
+                        $scope.currentfilter.RegisteredDate = utl.Formatter.getCurrentDate();
+                        vm.gridConfig.pagerObj.currentPage = 1;
+                        $scope.getList();
+                        break;
+                    case 'pageChange':
+                        if (payload && payload.page) {
+                            vm.gridConfig.pagerObj.currentPage = payload.page;
+                            $scope.getList();
+                        }
+                        break;
+                    case 'pageSizeChange':
+                        if (payload && payload.pageSize) {
+                            vm.gridConfig.pagerObj.pageSize = payload.pageSize;
+                            vm.gridConfig.pagerObj.currentPage = 1;
+                            $scope.getList();
+                        }
+                        break;
+                    case 'edit':
+                        if (payload) {
+                            $scope.handleEvents('edit', payload);
+                        }
+                        break;
+                    case 'patientinfo':
+                        if (payload) {
+                            $scope.handleEvents('patientinfo', payload);
+                        }
+                        break;
+                    case 'refresh':
+                        $scope.getList();
+                        break;
+                }
+            });
+        };
+
         $scope.getListCallback = function (scope, res, options, hasError) {
-            vm.gridConfig.data = res.Data;
-            vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            $scope.isLoading = false;
+            vm.gridConfig.data = (res && res.Data) || [];
+            vm.gridConfig.pagerObj.totalItems = (res && res.PageContext && res.PageContext.TotalRecords) || vm.gridConfig.data.length || 0;
+            $scope.refreshReactProps();
         };
 
         $scope.getList = function (pageNo) {
+            $scope.isLoading = true;
+            $scope.refreshReactProps();
+
             var FrRegDt = $filter('date')($scope.currentfilter.RegisteredDate, 'yyyy-MM-dd 00:00:00') || null;
             var ToRegDt = $filter('date')($scope.currentfilter.RegisteredDate, 'yyyy-MM-dd 23:59:59') || null;
-            // if ($scope.currentfilter.RegisteredDate) {
-            //     var FrRegDt = $filter('date')($scope.currentfilter.RegisteredDate, 'yyyy-MM-dd 00:00:00');
-            //     var ToRegDt = $filter('date')($scope.currentfilter.RegisteredDate, 'yyyy-MM-dd 23:59:59');
-            // }
+
+            var patKey = 0;
             if ($scope.currentfilter.Patientinfo) {
                 $scope.currentfilter.RegisteredDate = null;
-                var FrRegDt = '';
-                var ToRegDt = '';
+                FrRegDt = '';
+                ToRegDt = '';
+                if ($scope.selectedPatient && $scope.selectedPatient.Id) {
+                    patKey = 0;
+                } else if (isNaN(Number($scope.currentfilter.Patientinfo))) {
+                    patKey = 1;
+                } else {
+                    patKey = 0;
+                }
             }
             var inputData = {
                 Params: [{
-                        Key: 0,
+                        Key: patKey,
                         Value: $scope.currentfilter.Patientinfo
                     },
                     {
@@ -71,7 +171,6 @@
         };
 
         $scope.handleEvents = function (actionType, entity) {
-
             if (actionType == 'edit') {
                 utl.Modal.open('app.newpatientregister', {
                     params: {
@@ -81,15 +180,14 @@
                 });
             }
             else if (actionType == 'patientinfo') {
-                // $scope.patientprofiledetails(entity.Patient.Id);
                 utl.Modal.open('registration.patientprofile', {
                     params: {
                         pid: entity.Id
                     },
-                    confirmCallback: $scope.getitem
+                    confirmCallback: $scope.getList
                 });
             }
-        }
+        };
 
         vm.gridConfig = {
             enableColumnResizing: true,
@@ -107,8 +205,6 @@
                     field: "PatientInfo",
                     displayName: $translate.instant('registration.updatepatient.patplaceholder.lbl'),
                     cellTemplate: "<div class='ui-grid-cell-contents'>" +
-                        // '<a ng-click="grid.appScope.handleEvents(\'patientinfo\',entity)" uib-tooltip="{{entity.Title.Description}} ' + '{{entity.FirstName }} ' +
-                        // '{{entity.LastName}}" tooltip-placement="bottom">' +
                         '<a class="grid-action" ng-click="handleEvents(\'patientinfo\',entity)"'+
                         "<span ng-if='entity.Title && entity.Title.Description' >" +
                         "{{entity.Title.Description}}</span>" +
@@ -150,13 +246,14 @@
 
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getList();
-        }
+        };
 
         $scope.initLookup = function () {
             var inputData = [{
                 "Key": "PatientStatus"
-            }, ]
+            }];
             var options = {
                 action: 'General/Options/getoptions',
                 data: inputData,
@@ -164,8 +261,7 @@
                 onComplete: $scope.lookupCallback
             };
             utl.Http.doAction(options);
-
-        }
+        };
 
         $scope.initLookup();
     }

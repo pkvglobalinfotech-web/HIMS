@@ -313,6 +313,66 @@
             };
             utl.Http.doAction(options);
         };
+
+        // -------------------------------------------------------------
+        // React Bridge integration for BedManagementGridScreen
+        // -------------------------------------------------------------
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                wards: $scope.Wards || [],
+                totalBeds: $scope.TotalBeds || 0,
+                availableBeds: $scope.AvailableBed || 0,
+                occupiedBeds: $scope.OccupiedBed || 0,
+                todayAdmittedBed: $scope.TodayAdmittedBed || 0,
+                currentfilter: {
+                    WardId: $scope.currentfilter.WardId,
+                    AdmissionStatusId: $scope.currentfilter.AdmissionStatusId,
+                    DoctorId: $scope.currentfilter.DoctorId,
+                    PatientNameMRN: $scope.currentfilter.PatientNameMRN
+                },
+                lookup: $scope.lookup || {},
+                context: $scope.context || ''
+            };
+        };
+
+        var origGetWardBedsCallback = $scope.getWardBedsCallback;
+        $scope.getWardBedsCallback = function (scope, res, options, hasError) {
+            origGetWardBedsCallback(scope, res, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        var origLookupCallback = $scope.lookupCallback;
+        $scope.lookupCallback = function (scope, data, options, hasError) {
+            origLookupCallback(scope, data, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            payload = payload || {};
+            switch (actionName) {
+                case 'filterChangeAndSearch':
+                    if (payload.field) {
+                        $scope.currentfilter[payload.field] = payload.value;
+                    }
+                    $scope.getWardBeds();
+                    break;
+                case 'doctorDashboard':
+                    $scope.doctor_dashboard();
+                    break;
+                case 'patientdetails':
+                    $scope.patientdetails(payload);
+                    break;
+                case 'reserveBed':
+                    $scope.reserveBed(payload);
+                    break;
+                case 'maintenance':
+                    $scope.maintenance(payload);
+                    break;
+                default:
+                    break;
+            }
+        };
+
         $scope.initLookup();
     }
     bedmanagementGridController.$inject = ['$scope', '$filter', '$stateParams', '$state', '$translate', 'utl'];

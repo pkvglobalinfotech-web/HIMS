@@ -732,6 +732,113 @@
             utl.Http.doAction(options);
         }
 
+        // -------------------------------------------------------------
+        // React Bridge integration for AdmissionListScreen
+        // -------------------------------------------------------------
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                pageSize: vm.gridConfig.pagerObj.pageSize || 25,
+                currentfilter: {
+                    patientnamemrn: $scope.currentfilter.patientnamemrn,
+                    admissiondate: $scope.currentfilter.admissiondate,
+                    WardId: $scope.currentfilter.WardId,
+                    GuarantorId: $scope.currentfilter.GuarantorId,
+                    DoctorId: $scope.currentfilter.DoctorId,
+                    GuarantorTypeId: $scope.currentfilter.GuarantorTypeId,
+                    admissionstatusid: $scope.currentfilter.admissionstatusid,
+                    Context: $scope.Context
+                },
+                lookup: $scope.lookup || {},
+                context: $scope.Context || ''
+            };
+        };
+
+        var origGetListCallback = $scope.getListCallback;
+        $scope.getListCallback = function (scope, data, options, hasError) {
+            origGetListCallback(scope, data, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        var origLookupCallback = $scope.lookupCallback;
+        $scope.lookupCallback = function (scope, data, options, hasError) {
+            origLookupCallback(scope, data, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            payload = payload || {};
+            switch (actionName) {
+                case 'filterChange':
+                    if (payload.field) {
+                        $scope.currentfilter[payload.field] = payload.value;
+                    }
+                    $scope.refreshReactProps();
+                    break;
+                case 'filterChangeAndSearch':
+                    if (payload.field) {
+                        $scope.currentfilter[payload.field] = payload.value;
+                    }
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'search':
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'resetFilters':
+                    $scope.currentfilter.patientnamemrn = '';
+                    $scope.currentfilter.admissiondate = utl.Formatter.getCurrentDate();
+                    $scope.currentfilter.WardId = -1;
+                    $scope.currentfilter.GuarantorId = -1;
+                    $scope.currentfilter.DoctorId = -1;
+                    $scope.currentfilter.GuarantorTypeId = -1;
+                    $scope.currentfilter.admissionstatusid = 2;
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'pageChange':
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                    break;
+                case 'addNew':
+                    $scope.addNew();
+                    break;
+                case 'backToList':
+                    $scope.backtoList();
+                    break;
+                case 'showProcessFlow':
+                    $scope.showprocessflow();
+                    break;
+                case 'hideProcessFlow':
+                    $scope.hideprocessflow();
+                    break;
+                case 'patientinfo':
+                    $scope.handleEvents('patientinfo', payload);
+                    break;
+                case 'edit':
+                case 'view':
+                    $scope.handleEvents('view', payload);
+                    break;
+                case 'request':
+                    $scope.handleEvents('request', payload);
+                    break;
+                case 'complete':
+                    $scope.handleEvents('complete', payload);
+                    break;
+                case 'profile':
+                    $scope.handleEvents('profile', payload);
+                    break;
+                case 'delete':
+                    $scope.handleEvents('delete', payload);
+                    break;
+                default:
+                    break;
+            }
+        };
+
         $scope.initLookup();
     }
     admissionsListController.$inject = ['$rootScope', '$scope', '$filter', '$stateParams', '$state', '$translate', 'utl', '$timeout'];

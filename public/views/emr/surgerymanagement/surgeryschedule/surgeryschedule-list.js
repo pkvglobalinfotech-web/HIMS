@@ -23,9 +23,57 @@
 
         };
         $scope.currentcontext = {};
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter,
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
+            };
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'updateFilter') {
+                angular.extend($scope.currentfilter, payload);
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            } else if (actionName === 'changePage') {
+                vm.gridConfig.pagerObj.currentPage = payload;
+                $scope.getList();
+            } else if (actionName === 'addNew') {
+                $scope.addNew();
+            } else if (actionName === 'backtoList') {
+                $scope.backtoList();
+            } else if (actionName === 'view') {
+                $scope.handleEvents('edit', payload);
+            } else if (actionName === 'cancel') {
+                $scope.handleEvents('cancel', payload);
+            } else if (actionName === 'patientinfo') {
+                if (payload && payload.Patient && payload.Patient.Id) {
+                    $scope.patientprofiledetails(payload.Patient.Id);
+                }
+            } else if (actionName === 'print') {
+                $scope.print();
+            }
+        };
+
+        $scope.patientprofiledetails = function (patientId) {
+            utl.Modal.open('registration.patientprofile', {
+                params: {
+                    pid: patientId
+                },
+                confirmCallback: $scope.getList
+            });
+        };
+
         $scope.getListCallback = function (scope, res, options, hasError) {
             vm.gridConfig.data = res.Data;
             vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            $scope.refreshReactProps();
         };
 
         $scope.getList = function () {
@@ -596,8 +644,8 @@
             initDynamicForm();
             // $scope.doctorFilterChange ();
             // setDefaults();
+            $scope.refreshReactProps();
             $scope.getList();
-
         }
 
         $scope.initLookup = function () {

@@ -20,6 +20,10 @@ export const sessionHelper = {
     const v = ss.getItem('Session-UserId');
     return v ? parseInt(v, 10) : -1;
   },
+  getUserId: (): number => {
+    const v = ss.getItem('Session-UserId');
+    return v ? parseInt(v, 10) : -1;
+  },
   getCurrentUserName: (): string | null => ss.getItem('Session-UserName'),
   getUserTypeId: (): string | null => ss.getItem('Session-UserTypeId'),
   getCurrentEmployeeId: (): string | null => ss.getItem('Session-EmployeeId'),

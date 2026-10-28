@@ -23,8 +23,8 @@
         //Dynamic form  ends
         $scope.getListCallback = function (scope, res, options, hasError) {
             vm.gridConfig.data = res.Data;
-
             vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            $scope.refreshReactProps();
         };
         $timeout(function () {
             removeFloatingNav();
@@ -129,11 +129,54 @@
                 startIndex: 0,
                 pageSize: 25
             }
-        }
+        };
+
+        $scope.reactProps = {
+            items: [],
+            lookup: {},
+            currentfilter: $scope.currentfilter,
+            pager: {
+                totalItems: 0,
+                currentPage: 1,
+                pageSize: 25
+            }
+        };
+
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                lookup: $scope.lookup || {},
+                currentfilter: angular.copy($scope.currentfilter),
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
+            };
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'updateFilter') {
+                angular.extend($scope.currentfilter, payload);
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            } else if (actionName === 'changePage') {
+                vm.gridConfig.pagerObj.currentPage = payload;
+                $scope.getList();
+            } else if (actionName === 'addNew') {
+                $scope.addNew();
+            } else if (actionName === 'edit') {
+                $scope.handleEvents('edit', payload);
+            } else if (actionName === 'refresh') {
+                $scope.getList();
+            }
+        };
+
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getList();
-        }
+        };
 
         $scope.initLookup = function () {
             var inputData = [{

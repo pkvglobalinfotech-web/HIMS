@@ -87,6 +87,72 @@
                 $scope.item.GenderId = 2; // 2-FeMale
             }
         };
+
+        // =========================================================================
+        // REACT MODERNIZATION BRIDGE: NewPatientRegisterModalScreen
+        // =========================================================================
+        $scope.refreshReactProps = function () {
+            var doUpdate = function () {
+                $scope.reactProps = {
+                    item: angular.copy($scope.item || {}),
+                    lookup: angular.copy($scope.lookup || {}),
+                    currentcontext: {
+                        pid: $scope.currentcontext.pid,
+                        eid: $scope.currentcontext.eid,
+                        Photo: $scope.currentcontext.Photo,
+                        file: $scope.currentcontext.file,
+                        isSaving: !!$scope.currentcontext.canDisableApprove
+                    }
+                };
+            };
+            if ($scope.$$phase) {
+                doUpdate();
+            } else {
+                $scope.$evalAsync(doUpdate);
+            }
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            $scope.$evalAsync(function () {
+                switch (actionName) {
+                    case 'fieldChange':
+                        if (payload && payload.field) {
+                            $scope.item[payload.field] = payload.value;
+                            if (payload.field === 'TitleId') {
+                                $scope.fillGenderInfo();
+                            } else if (payload.field === 'Age') {
+                                $scope.calculateDOB($scope.item.Age, 'years');
+                            } else if (payload.field === 'DOB') {
+                                $scope.calculateAge();
+                            }
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'photoFileChanged':
+                        if (payload && payload.file) {
+                            $scope.currentcontext.file = payload.file;
+                            $scope.refreshReactProps();
+                        }
+                        break;
+                    case 'openWebCam':
+                        $scope.openWebCam();
+                        break;
+                    case 'clearImage':
+                        $scope.clearimage();
+                        $scope.refreshReactProps();
+                        break;
+                    case 'saveAndApprove':
+                        if (payload) {
+                            angular.extend($scope.item, payload);
+                        }
+                        $scope.saveAndApprove();
+                        break;
+                    case 'cancel':
+                        $scope.cancelCallback();
+                        break;
+                }
+            });
+        };
         $scope.UploadPatientPhoto = function () {
             var actionName = 'registration/patient/UpdatePatient';
             if ($scope.currentcontext.file && $scope.item.PatientId) {
@@ -224,17 +290,19 @@
         //get item
         $scope.getItemCallback = function (scope, data, options, hasError) {
             $scope.item = data;
-            if (data.Encounters.length > 0) {
+            if (data.Encounters && data.Encounters.length > 0) {
                 $scope.item.DoctorId = data.Encounters[0].DoctorId;
             }
             $scope.DocDisable = true;
-            $scope.getPatientProfilePic ();
+            $scope.refreshReactProps();
+            $scope.getPatientProfilePic();
         };
 
         function webcamSuccess(base64String) {
             $scope.item.iswebcamphoto = true;
             $scope.item.webcamphoto = base64String;
             $scope.currentcontext.file = null;
+            $scope.refreshReactProps();
         }
 
         $scope.openWebCam = function () {
@@ -251,6 +319,7 @@
             $scope.currentcontext.Photo = null;
             $scope.item.iswebcamphoto = false;
             $scope.item.PhotoPath = null;
+            $scope.refreshReactProps();
         };
         $scope.afterSave = function (data, options) {
             $scope.getItem();
@@ -269,12 +338,12 @@
             }
         };
         $scope.getPatientProfilePicCallback = function (scope, data, options, hasError) {
-            //console.log(data);
-            $scope.currentcontext.Photo = data.Photo;
+            $scope.currentcontext.Photo = data ? data.Photo : null;
+            $scope.refreshReactProps();
         };
         $scope.getEncounterProfilePicCallback = function (scope, data, options, hasError) {
-            //console.log(data);
-            $scope.currentcontext.Photo = data.Photo;
+            $scope.currentcontext.Photo = data ? data.Photo : null;
+            $scope.refreshReactProps();
         };
         $scope.getPatientProfilePic = function () {
             if ($scope.item.PhotoPath) {
@@ -528,6 +597,7 @@
         //Lookup
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getItem();
             if($scope.currentcontext.eid > 0){
                 $scope.getEncounters();

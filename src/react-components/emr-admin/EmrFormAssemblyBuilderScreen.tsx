@@ -345,7 +345,7 @@ export const EmrFormAssemblyBuilderScreen: React.FC<Props> = ({ reactProps, navi
                             </div>
                             <div className="emrws-placed-body emrws-placed-body--grow">
                               <Input size="sm" placeholder="Nickname (tab label)" value={p.NickName} onChange={(e) => patch(i, { NickName: e.target.value })} aria-label={`Nickname for ${s?.Name || 'panel'}`} />
-                              <select className="emrws-inline-select" value={p.DockPositionId} onChange={(e) => patch(i, { DockPositionId: Number(e.target.value) })} aria-label="Dock position">
+                              <select className="emrws-inline-select" value={p.DockPositionId ?? DOCK.TOP} onChange={(e) => patch(i, { DockPositionId: Number(e.target.value) })} aria-label="Dock position">
                                 <option value={DOCK.TOP}>Top tabs</option>
                                 <option value={DOCK.RIGHT}>Right tabs</option>
                               </select>

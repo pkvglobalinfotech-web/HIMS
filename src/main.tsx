@@ -111,9 +111,14 @@ import { InpatientTabScreen } from './react-components/InpatientTabScreen';
 
 // Import OpdBillScreen Component
 import { OpdBillScreen } from './react-components/OpdBillScreen';
-// Import OpBillingListScreen Component
 import { OpBillingListScreen } from './react-components/OpBillingListScreen';
 import { DirectBillingListScreen } from './react-components/DirectBillingListScreen';
+import { PharmacySalesScreen } from './react-components/PharmacySalesScreen';
+import { PharmacyReturnScreen } from './react-components/PharmacyReturnScreen';
+import { PharmacyPreviousBillsModal } from './react-components/PharmacyPreviousBillsModal';
+import { PharmacyPreviousReturnsModal } from './react-components/PharmacyPreviousReturnsModal';
+import { PatientUpdateListScreen } from './react-components/PatientUpdateListScreen';
+import { NewPatientRegisterModalScreen } from './react-components/NewPatientRegisterModalScreen';
 
 // Import VisitCreateFormScreen Components (visitcreateform.js/.html --
 // six mounts sharing one reactProps/handleReactAction; see the disclosure
@@ -150,6 +155,12 @@ import { PendingDischargesScreen } from './react-components/PendingDischargesScr
 
 // Import CurrentInpatientListScreen Component
 import { CurrentInpatientListScreen } from './react-components/CurrentInpatientListScreen';
+
+// Import PatientProfileModal Component
+import { PatientProfileModal } from './react-components/PatientProfileModal';
+
+// Import MrdFileReturnsListScreen Component
+import { MrdFileReturnsListScreen } from './react-components/MrdFileReturnsListScreen';
 
 // Import OppatientTabScreen Component
 import { OppatientTabScreen } from './react-components/OppatientTabScreen';
@@ -609,6 +620,10 @@ import { IpMrdFileTransferStatusFilterScreen } from './react-components/IpMrdFil
 import { IpMrdFileTransferListScreen } from './react-components/IpMrdFileTransferListScreen';
 import { TransferredFileReturnsStatusFilterScreen } from './react-components/TransferredFileReturnsStatusFilterScreen';
 import { TransferredFileReturnsListScreen } from './react-components/TransferredFileReturnsListScreen';
+import { IpMrdFileRequestListScreen } from './react-components/IpMrdFileRequestListScreen';
+import { IpMrdFileRequestApproveListScreen } from './react-components/IpMrdFileRequestApproveListScreen';
+import { IpClearenceListScreen } from './react-components/IpClearenceListScreen';
+import { BedReceiveListScreen } from './react-components/BedReceiveListScreen';
 import { EditDrShareInfoListScreen } from './react-components/EditDrShareInfoListScreen';
 import { DiscountFormModeScreen } from './react-components/DiscountFormModeScreen';
 import { OpBillingInfoFormSelectScreen } from './react-components/OpBillingInfoFormSelectScreen';
@@ -665,6 +680,23 @@ import { RadiologyReportsScreen } from './react-components/RadiologyReportsScree
 import { RadiologyCriticalValuesScreen } from './react-components/RadiologyCriticalValuesScreen';
 import { VendorPaymentListScreen } from './react-components/VendorPaymentListScreen';
 import { VendorPaymentFormScreen } from './react-components/VendorPaymentFormScreen';
+import { AdmissionListScreen } from './react-components/AdmissionListScreen';
+import { AdmissionRequestListScreen } from './react-components/AdmissionRequestListScreen';
+import { BedTransferListScreen } from './react-components/BedTransferListScreen';
+import { BedManagementGridScreen } from './react-components/BedManagementGridScreen';
+import { AdmissionFormScreen } from './react-components/AdmissionFormScreen';
+import { WardBedPickerModalScreen } from './react-components/WardBedPickerModalScreen';
+import { DischargeSummaryFormScreen } from './react-components/DischargeSummaryFormScreen';
+import { DischargeNotesListScreen } from './react-components/DischargeNotesListScreen';
+import { OtBedReceiveListScreen } from './react-components/OtBedReceiveListScreen';
+import { SurgeryEntryListScreen } from './react-components/SurgeryEntryListScreen';
+import { SurgeryDashboardScreen } from './react-components/SurgeryDashboardScreen';
+import { SurgeryRoomMasterListScreen } from './react-components/SurgeryRoomMasterListScreen';
+import { SurgeryScheduleCalendarScreen } from './react-components/SurgeryScheduleCalendarScreen';
+import { SurgeryScheduleListScreen } from './react-components/SurgeryScheduleListScreen';
+import { AePatientRegistrationScreen } from './react-components/AePatientRegistrationScreen';
+import { AeDashboardScreen } from './react-components/AeDashboardScreen';
+import { AeBillingScreen } from './react-components/AeBillingScreen';
 // Print API for the AngularJS print controllers (window.HimsPrint); QZ Tray loads on the first print
 import './printing/himsPrint';
 
@@ -735,6 +767,12 @@ import './printing/himsPrint';
   OpdBillScreen,
   OpBillingListScreen,
   DirectBillingListScreen,
+  PharmacySalesScreen,
+  PharmacyReturnScreen,
+  PharmacyPreviousBillsModal,
+  PharmacyPreviousReturnsModal,
+  PatientUpdateListScreen,
+  NewPatientRegisterModalScreen,
   VisitCreateFormPatientHeader,
   VisitCreateFormTopFields,
   VisitCreateFormMidFields,
@@ -749,6 +787,8 @@ import './printing/himsPrint';
   PatientDischargeListScreen,
   PendingDischargesScreen,
   CurrentInpatientListScreen,
+  PatientProfileModal,
+  MrdFileReturnsListScreen,
   OppatientTabScreen,
   MyOPPatientListScreen,
   AllOPPatientListScreen,
@@ -1043,6 +1083,10 @@ import './printing/himsPrint';
   IpMrdFileTransferListScreen,
   TransferredFileReturnsStatusFilterScreen,
   TransferredFileReturnsListScreen,
+  IpMrdFileRequestListScreen,
+  IpMrdFileRequestApproveListScreen,
+  IpClearenceListScreen,
+  BedReceiveListScreen,
   EditDrShareInfoListScreen,
   DiscountFormModeScreen,
   OpBillingInfoFormSelectScreen,
@@ -1117,7 +1161,24 @@ import './printing/himsPrint';
   RadiologyReportsScreen,
   RadiologyCriticalValuesScreen,
   VendorPaymentListScreen,
-  VendorPaymentFormScreen
+  VendorPaymentFormScreen,
+  AdmissionListScreen,
+  AdmissionRequestListScreen,
+  BedTransferListScreen,
+  BedManagementGridScreen,
+  AdmissionFormScreen,
+  WardBedPickerModalScreen,
+  DischargeSummaryFormScreen,
+  DischargeNotesListScreen,
+  OtBedReceiveListScreen,
+  SurgeryEntryListScreen,
+  SurgeryDashboardScreen,
+  SurgeryRoomMasterListScreen,
+  SurgeryScheduleCalendarScreen,
+  SurgeryScheduleListScreen,
+  AePatientRegistrationScreen,
+  AeDashboardScreen,
+  AeBillingScreen
 };
 
 console.log('React runtime and components loaded. ReactBridge initialized.');

@@ -93,18 +93,19 @@
         //Dynamic form  ends
 
         $scope.getListCallback = function (scope, res, options, hasError) {
-            vm.gridConfig.data = res.Data;
-            // for (var idx in res.Data) {
-            //     var list = {};
-            //     if (res.Data[idx].WardId != 16 && res.Data[idx].WardId != 18) {
-            //         list = res.Data[idx];
-            //         vm.gridConfig.data.push(list);
-            //     }
-            // }
-            vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            $scope.loading = false;
+            vm.gridConfig.data = (res && res.Data) ? res.Data : [];
+            vm.gridConfig.pagerObj.totalItems = (res && res.PageContext) ? res.PageContext.TotalRecords : 0;
+            if ($scope.updateReactProps) {
+                $scope.updateReactProps();
+            }
         };
 
         $scope.getList = function () {
+            $scope.loading = true;
+            if ($scope.updateReactProps) {
+                $scope.updateReactProps();
+            }
 
             var inputData = {
                 Params: [{
@@ -253,7 +254,65 @@
             $scope.lookup = hasError ? {} : data;
             initDynamicForm();
             $scope.getList();
-        }
+            if ($scope.updateReactProps) {
+                $scope.updateReactProps();
+            }
+        };
+
+        $scope.updateReactProps = function () {
+            $scope.reactProps = {
+                modeldata: $scope.modeldata || {},
+                lookup: $scope.lookup || {},
+                beds: vm.gridConfig.data || [],
+                totalItems: (vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.totalItems) || 0,
+                currentPage: (vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.currentPage) || 1,
+                pageSize: (vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.pageSize) || 25,
+                loading: Boolean($scope.loading)
+            };
+            if (!$scope.$$phase) {
+                $scope.$applyAsync();
+            }
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            payload = payload || {};
+            switch (actionName) {
+                case 'selectBed':
+                    if (payload.bed) {
+                        $scope.handleEvents('select', payload.bed);
+                    }
+                    break;
+                case 'filterChange':
+                    if (payload.field) {
+                        $scope.modeldata[payload.field] = payload.value;
+                        $scope.updateReactProps();
+                    }
+                    break;
+                case 'fetch':
+                    if (payload.WardId !== undefined) $scope.modeldata.WardId = payload.WardId;
+                    if (payload.BedStatusId !== undefined) $scope.modeldata.BedStatusId = payload.BedStatusId;
+                    if (payload.IsTemp !== undefined) $scope.modeldata.IsTemp = payload.IsTemp;
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'resetFilters':
+                    $scope.modeldata = JSON.parse(JSON.stringify($scope.defaultdata));
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'pageChange':
+                    if (payload.page) {
+                        vm.gridConfig.pagerObj.currentPage = payload.page;
+                        $scope.getList();
+                    }
+                    break;
+                case 'close':
+                    $scope.cancelCallback();
+                    break;
+                default:
+                    break;
+            }
+        };
 
         $scope.initLookup = function () {
             var inputData = [{

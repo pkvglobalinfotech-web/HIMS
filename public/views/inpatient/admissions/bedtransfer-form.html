@@ -1,320 +1,536 @@
 <style>
+    .bedtransfer-modal-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #0f172a;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .bedtransfer-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+    .bedtransfer-modal-body {
+        padding: 20px 24px;
+        max-height: calc(85vh - 120px);
+        overflow-y: auto;
+    }
+    .bedtransfer-modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+    .bedtransfer-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .bedtransfer-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .bedtransfer-card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    .bedtransfer-form-group {
+        margin-bottom: 14px;
+    }
+    .bedtransfer-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 5px;
+    }
+    .bedtransfer-label .req {
+        color: #ef4444;
+        margin-left: 2px;
+    }
+    .bedtransfer-input,
+    .bedtransfer-modal-wrapper .form-control {
+        height: 38px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 13px;
+        padding: 0 12px;
+        box-shadow: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .bedtransfer-input:focus,
+    .bedtransfer-modal-wrapper .form-control:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        outline: none;
+    }
+    .bedtransfer-modal-wrapper .ui-select-container .ui-select-match-button {
+        height: 38px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+        padding: 0 12px;
+    }
+    .bedtransfer-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 6px;
+        border: none;
+        background-color: #2563eb;
+        color: #ffffff;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        transition: all 0.15s ease;
+    }
+    .bedtransfer-btn-primary:hover:not(:disabled) {
+        background-color: #1d4ed8;
+    }
+    .bedtransfer-btn-primary:disabled {
+        background-color: #94a3b8;
+        opacity: 0.65;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+    .bedtransfer-btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .bedtransfer-btn-secondary:hover:not(:disabled) {
+        background-color: #f8fafc;
+        border-color: #94a3b8;
+    }
+    .bedtransfer-btn-secondary:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        background-color: #f1f5f9;
+        color: #94a3b8;
+    }
+    .bedtransfer-btn-matrix {
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 4px;
+        border: 1px solid #bfdbfe;
+        background-color: #eff6ff;
+        color: #2563eb;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .bedtransfer-btn-matrix:hover:not(:disabled) {
+        background-color: #dbeafe;
+    }
+    .bedtransfer-btn-matrix:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #94a3b8;
+    }
     autosearch .custom-popup-wrapper {
-        margin-left: -250px;
+        margin-left: -200px;
     }
 </style>
-<div class="modal-header custom-modal-header">
-    <div class="col-sm-10">
-        <h4 class="modal-title custom-modal-title" translate="Bed Transfer"></h4>
-    </div>
-    <div class="col-sm-2">
-        <div class="filters">
-            <img src="../../../../../assets/svg/close.svg" ng-click="cancelCallback()">
+
+<div class="bedtransfer-modal-wrapper">
+    <!-- ── Modal Header ── -->
+    <div class="bedtransfer-modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);">
+                <i class="fa fa-exchange" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h4 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em;">
+                    Bed Transfer Relocation
+                </h4>
+                <div style="font-size: 12px; color: #64748b; margin-top: 1px;">
+                    Internal In-Patient Ward, Room & Bed Allocation
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" ng-click="cancelCallback()" title="Close (Esc)" style="background: none; border: none; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #64748b; cursor: pointer; transition: background 0.15s ease;" onmouseenter="this.style.backgroundColor='#f1f5f9'" onmouseleave="this.style.backgroundColor='transparent'">
+                <i class="fa fa-times" style="font-size: 18px;"></i>
+            </button>
         </div>
     </div>
-</div>
-<div class="row">
-    <div class="col-sm-9"></div>
-    <div class="col-sm-3">
-        <div class="search" ng-if="CanshowPatientSearch">
-            <autosearch itemid="item.EncounterId" iteminfo="item.SelectedItem" rowdata="item"
-                config="vm.patientcontrolconfig" itemchange="patientChanged()" name="patientname"
-                candisable="isDisabled||IsBedScreen" isrequired="true" placeholder="'patient'"></autosearch>
-            <div class="drhms-search-icon"><i class="fas fa-search" aria-hidden="true"></i></div>
+
+    <!-- ── Modal Body ── -->
+    <div class="bedtransfer-modal-body">
+        <!-- ── Top Search Bar ── -->
+        <div class="bedtransfer-card" ng-if="CanshowPatientSearch" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 18px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa fa-search" style="color: #2563eb; font-size: 14px;"></i>
+                    <span style="font-size: 13px; font-weight: 700; color: #1e293b;">Select In-Patient for Transfer:</span>
+                </div>
+                <div style="min-width: 280px; max-width: 380px; width: 100%;">
+                    <autosearch itemid="item.EncounterId" iteminfo="item.SelectedItem" rowdata="item"
+                        config="vm.patientcontrolconfig" itemchange="patientChanged()" name="patientname"
+                        candisable="isDisabled||IsBedScreen" isrequired="true" placeholder="'Search patient by Name, MRN or IP No...'"></autosearch>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-<!-- <div class="">
-    <patientbanner patientid="item.PatientId"></patientbanner>
-</div> -->
-<div class="row">
-    <form id="item_form" name="item_form" class="form-horizontal" role="form">
-        <div class="row">
-            <div class="patient-banner-table lis">
-                <div class="patient-banner-table-section">
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Patient Name"></label>
-                        <div class="col-sm-7 item-center">
-                            <span class="head-title">: {{item.PatientName}}</span>
+
+        <!-- ── Patient Details Section ── -->
+        <!-- Case 1: No Patient Selected Prompt -->
+        <div ng-if="!item.PatientId || item.PatientId <= 0" style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 22px; text-align: center; margin-bottom: 18px;">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">
+                <i class="fa fa-user-plus"></i>
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b;">
+                No In-Patient Selected
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 3px;">
+                Please search and select an admitted patient above to load current bed details and enable transfer actions.
+            </div>
+        </div>
+
+        <!-- Case 2: Patient Selected Summary Card -->
+        <div class="bedtransfer-card" ng-if="item.PatientId > 0" style="border-left: 4px solid #2563eb; background: #ffffff;">
+            <div class="bedtransfer-card-header">
+                <div class="bedtransfer-card-title">
+                    <i class="fa fa-id-card-o" style="color: #2563eb;"></i>
+                    <span>Patient Profile & Origin Bed Information</span>
+                </div>
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+                    <i class="fa fa-circle" style="font-size: 7px;"></i> Active In-Patient
+                </span>
+            </div>
+
+            <div class="row">
+                <!-- Column 1: Patient Demographics -->
+                <div class="col-sm-4" style="border-right: 1px solid #f1f5f9; padding-right: 16px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            {{(item.PatientName || 'P')[0]}}
+                        </div>
+                        <div>
+                            <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
+                                {{item.PatientName}}
+                            </div>
+                            <div style="font-size: 11px; color: #64748b;">
+                                {{item.Age ? item.Age + ' Y' : ''}} {{item.Gender ? '• ' + item.Gender : ''}}
+                            </div>
                         </div>
                     </div>
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Patient ID / IP ID"></label>
-                        <div class="col-sm-7 item-center">
-                            <span class="head-title">: {{item.PatientMrn}} / {{item.VisitIdentifier}}</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Age/Gender"></label>
-                        <div class="col-sm-7 item-center">
-                            <span class="head-title">: {{item.Age}} | {{item.Gender}} </span>
-                        </div>
+                    <div style="font-size: 12px; line-height: 1.6; color: #334155;">
+                        <div><strong>MRN:</strong> <span style="color: #2563eb; font-weight: 600;">{{item.PatientMrn || '—'}}</span></div>
+                        <div><strong>IP No:</strong> <span style="color: #0f172a; font-weight: 600;">{{item.VisitIdentifier || '—'}}</span></div>
                     </div>
                 </div>
-                <div class="patient-banner-table-section">
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Referred by"></label>
-                        <div class="col-sm-7 item-center">
-                            <span class="head-title">: {{item.ReferralName}}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Payer Name"></label>
-                        <div class="col-sm-7 item-center">
-                            <span class="head-title">: {{item.GuarantorName}}</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Doctor Name"></label>
-                        <div class="col-sm-7 item-center">
+
+                <!-- Column 2: Referral & Payer -->
+                <div class="col-sm-4" style="border-right: 1px solid #f1f5f9; padding-left: 16px; padding-right: 16px;">
+                    <div style="font-size: 12px; line-height: 1.6; color: #334155;">
+                        <div style="margin-bottom: 4px;"><strong>Referred By:</strong> {{item.ReferralName || 'Self / Walk-in'}}</div>
+                        <div style="margin-bottom: 6px;"><strong>Payer:</strong> {{item.GuarantorName || 'Self / Cash'}}</div>
+                        <div>
+                            <strong style="display: block; margin-bottom: 3px;">Consultant Doctor:</strong>
                             <ui-select id='doctorid' ng-keyup="moveHeaderFocus('doctorid')" ng-model="item.DoctorId"
                                 tabindex="-1" ng-change="onDoctorSelected($select.selected)" name="doctorid"
-                                ng-disabled="RdoDoctorId">
+                                ng-disabled="RdoDoctorId" style="width: 100%;">
                                 <ui-select-match>
-                                    {{$select.selected.Text | limitTo : 20 : 0}}
-                                    <span ng-if="$select.selected.Text.length>20">...</span>
+                                    {{$select.selected.Text | limitTo : 22 : 0}}
                                 </ui-select-match>
-                                <ui-select-choices
-                                    repeat="lookupitem.Id as lookupitem in lookup.Doctor | filter: { Text: $select.search }">
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Doctor | filter: { Text: $select.search }">
                                     <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
                                 </ui-select-choices>
                             </ui-select>
                         </div>
                     </div>
                 </div>
-                <div class="patient-banner-table-section">
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Hospital"></label>
-                        <div class="col-sm-7 item-center">
-                            <span class="head-title">: {{item.FacilityName}}</span>
+
+                <!-- Column 3: Current Origin Location -->
+                <div class="col-sm-4" style="padding-left: 16px;">
+                    <div style="font-size: 12px; line-height: 1.6; color: #334155;">
+                        <div style="margin-bottom: 6px;">
+                            <strong style="color: #64748b; font-size: 11px; text-transform: uppercase;">Facility:</strong>
+                            <div style="font-weight: 600; color: #0f172a;">{{item.FacilityName || 'Main Hospital'}}</div>
                         </div>
-                    </div>
-                    <div class="col-sm-12">
-                        <label class="col-sm-5" translate="Patient Location"></label>
-                        <div class="col-sm-7 item-center">
-                            <span class="head-title">: {{item.WardName}}/{{item.BedNo}}/{{item.RoomNo}}
-                            </span>
+                        <div>
+                            <strong style="color: #dc2626; font-size: 11px; text-transform: uppercase;">Current Bed Origin:</strong>
+                            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-weight: 700; font-size: 12px; margin-top: 4px;">
+                                <i class="fa fa-sign-out"></i>
+                                <span>{{item.WardName || 'Ward'}} / {{item.RoomNo || 'Room'}} / {{item.BedNo || 'Bed'}}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <fieldset class="" ng-disabled="item.IsBackToSameBed">
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="location"
-                        translate="bedtransfertab.Location.lbl"></label>
-                    <div class="col-sm-9" ng-show="WardRoomEditable==true">
-                        <ui-select ng-model="item.ToLocationId" ng-disabled="true"
-                            ng-change="wardLookUp($select.selected)" required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Location | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
+
+        <!-- ── Target Bed & Location Allocation Form ── -->
+        <form id="item_form" name="item_form" role="form">
+            <fieldset class="bedtransfer-card" ng-disabled="item.IsBackToSameBed">
+                <div class="bedtransfer-card-header">
+                    <div class="bedtransfer-card-title">
+                        <i class="fa fa-bed" style="color: #2563eb;"></i>
+                        <span>Target Bed & Ward Allocation</span>
                     </div>
-                    <div class="col-sm-9" ng-show="WardRoomEditable==false">
-                        <ui-select ng-model="item.ToLocationId" name="location" ng-change="wardLookUp($select.selected)"
-                            required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Location | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
-                    </div>
-                    <!-- <div class="col-sm-1"> <a class="link" ng-click="openWardBed()" ng-show="item.PatientId "> Bed </a></div> -->
-                    <div class="col-sm-3 pull-right" style="white-space: nowrap;">
-                        <button class="bed-btn" type="button" ng-click="bedCharges()" translate="Room $"
-                            ng-if="item.ToBedId>0"></button>
-                        <button class="bed-btn" type="button" ng-click="openWardBed()" ng-disabled="item.isAdmitted"
-                            translate="admission.bed.lbl"></button>
+                    <div style="font-size: 12px; color: #64748b;">
+                        Fields marked with <span style="color: #ef4444;">*</span> are mandatory
                     </div>
                 </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="ward" translate="bedtransfertab.ward.lbl"></label>
-                    <div class="col-sm-12" ng-show="WardRoomEditable==true">
-                        <ui-select ng-model="item.ToWardId" ng-disabled="true"
-                            ng-change="getRoomLookUp($select.selected)" required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
+
+                <div class="row">
+                    <!-- Location -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                            <label class="bedtransfer-label" style="margin: 0;">
+                                Location<span class="req">*</span>
+                            </label>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="bedtransfer-btn-matrix" type="button" ng-click="bedCharges()" ng-if="item.ToBedId > 0" title="View Room Charges">
+                                    <i class="fa fa-usd"></i> Tariffs
+                                </button>
+                                <button class="bedtransfer-btn-matrix" type="button" ng-click="openWardBed()" ng-disabled="!item.PatientId" title="Open Visual Bed Matrix">
+                                    <i class="fa fa-th"></i> Bed Matrix
+                                </button>
+                            </div>
+                        </div>
+
+                        <div ng-show="WardRoomEditable==true">
+                            <ui-select ng-model="item.ToLocationId" ng-disabled="true" ng-change="wardLookUp($select.selected)" required>
+                                <ui-select-match placeholder="Select Location...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Location | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                        <div ng-show="WardRoomEditable==false">
+                            <ui-select ng-model="item.ToLocationId" name="location" ng-change="wardLookUp($select.selected)" required>
+                                <ui-select-match placeholder="Select Location...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Location | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                    </div>
+
+                    <!-- Ward -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <label class="bedtransfer-label">
+                            Target Ward<span class="req">*</span>
+                        </label>
+                        <div ng-show="WardRoomEditable==true">
+                            <ui-select ng-model="item.ToWardId" ng-disabled="true" ng-change="getRoomLookUp($select.selected)" required>
+                                <ui-select-match placeholder="Select Target Ward...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Ward | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                        <div ng-show="WardRoomEditable==false">
+                            <ui-select ng-model="item.ToWardId" name="ward" ng-change="getRoomLookUp($select.selected)" required>
+                                <ui-select-match placeholder="Select Target Ward...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Ward | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                    </div>
+
+                    <!-- Room -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <label class="bedtransfer-label">
+                            Target Room<span class="req">*</span>
+                        </label>
+                        <div ng-show="WardRoomEditable==true">
+                            <ui-select ng-model="item.ToRoomId" ng-disabled="true" ng-change="getBedLookUp($select.selected)" required>
+                                <ui-select-match placeholder="Select Target Room...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Room | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                        <div ng-show="WardRoomEditable==false">
+                            <ui-select ng-model="item.ToRoomId" name="room" ng-change="getBedLookUp($select.selected)" required>
+                                <ui-select-match placeholder="Select Target Room...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Room | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                    </div>
+
+                    <!-- Bed No -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <label class="bedtransfer-label">
+                            Target Bed No<span class="req">*</span>
+                        </label>
+                        <div ng-show="WardRoomEditable==true">
+                            <ui-select ng-model="item.ToBedId" ng-disabled="true" ng-change="tariffChange()" required>
+                                <ui-select-match placeholder="Select Assigned Bed...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Bed | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                        <div ng-show="WardRoomEditable==false">
+                            <ui-select ng-model="item.ToBedId" name="Bed" ng-change="tariffChange()" required>
+                                <ui-select-match placeholder="Select Assigned Bed...">
+                                    {{$select.selected.Text}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Bed | filter: { Text: $select.search }">
+                                    <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                    </div>
+
+                    <!-- Bed Category -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <label class="bedtransfer-label">
+                            Bed Category<span class="req">*</span>
+                        </label>
+                        <ui-select ng-model="item.ToServiceRateCategoryId" name="bedcategory" required ng-disabled="true">
+                            <ui-select-match placeholder="Service Rate Category">
+                                {{$select.selected.Text}}
                             </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Ward | filter: { Text: $select.search }">
+                            <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.ServiceRateCategory | filter: { Text: $select.search }">
                                 <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
                             </ui-select-choices>
                         </ui-select>
                     </div>
-                    <div class="col-sm-12" ng-show="WardRoomEditable==false">
-                        <ui-select ng-model="item.ToWardId" name="ward" ng-change="getRoomLookUp($select.selected)"
-                            required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
+
+                    <!-- Doctor -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <label class="bedtransfer-label">
+                            Consultant Doctor<span class="req">*</span>
+                        </label>
+                        <ui-select ng-model="item.DoctorId" ng-change="doctorChange()" name="doctorid" ng-disabled="RdoDoctorId" required>
+                            <ui-select-match placeholder="Select Doctor...">
+                                {{$select.selected.Text}}
                             </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Ward | filter: { Text: $select.search }">
+                            <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Doctor | filter: { Text: $select.search }">
                                 <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
                             </ui-select-choices>
                         </ui-select>
                     </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="room" translate="bedtransfertab.room.lbl"></label>
-                    <div class="col-sm-12" ng-show="WardRoomEditable==true">
-                        <ui-select ng-model="item.ToRoomId" ng-disabled="true"
-                            ng-change="getBedLookUp($select.selected)" required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
+
+                    <!-- Department -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <label class="bedtransfer-label">
+                            Admitting Department<span class="req">*</span>
+                        </label>
+                        <ui-select ng-model="item.DepartmentId" ng-disabled="item.isAdmitted" name="department" required>
+                            <ui-select-match placeholder="Select Department...">
+                                {{$select.selected.Text}}
                             </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Room | filter: { Text: $select.search }">
+                            <ui-select-choices repeat="lookupitem.Id as lookupitem in lookup.Department | filter: { Text: $select.search }">
                                 <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
                             </ui-select-choices>
                         </ui-select>
                     </div>
-                    <div class="col-sm-12" ng-show="WardRoomEditable==false">
-                        <ui-select ng-model="item.ToRoomId" name="room" ng-change="getBedLookUp($select.selected)"
-                            required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Room | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
-                    </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="Bed" translate="bedtransfertab.bedno.lbl"></label>
-                    <div class="col-sm-12" ng-show="WardRoomEditable==true">
-                        <ui-select ng-model="item.ToBedId" ng-disabled="true" ng-change="tariffChange()" required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Bed | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
-                    </div>
-                    <div class="col-sm-12" ng-show="WardRoomEditable==false">
-                        <ui-select ng-model="item.ToBedId" name="Bed" ng-change="tariffChange()" required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Bed | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
-                    </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="bedcategory"
-                        translate="bedtransfertab.bedcategory.lbl"></label>
-                    <div class="col-sm-12">
-                        <!-- <ui-select ng-model="item.ToServiceRateCategoryId" name="bedcategory" required ng-disabled="DisRateType"> -->
-                        <ui-select ng-model="item.ToServiceRateCategoryId" name="bedcategory" required
-                            ng-disabled="true">
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.ServiceRateCategory | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
-                    </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="doctorid"
-                        translate="billing.opbilling-list.doctor.lbl"></label>
-                    <div class="col-sm-12">
-                        <ui-select ng-model="item.DoctorId" ng-change="doctorChange()" name="doctorid"
-                            ng-disabled="RdoDoctorId" required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Doctor | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
-                    </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="department"
-                        translate="admission.admittingdepartment.lbl"></label>
-                    <div class="col-sm-12">
-                        <ui-select ng-model="item.DepartmentId" ng-disabled="item.isAdmitted" name="department"
-                            required>
-                            <ui-select-match>
-                                {{$select.selected.Text | limitTo : 20 : 0}}
-                                <span ng-if="$select.selected.Text.length>20">...</span>
-                            </ui-select-match>
-                            <ui-select-choices
-                                repeat="lookupitem.Id as lookupitem in lookup.Department | filter: { Text: $select.search }">
-                                <div ng-bind-html="lookupitem.Text | highlight: $select.search"></div>
-                            </ui-select-choices>
-                        </ui-select>
-                    </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="admissiondate"
-                        translate="bedtransfertab.transferdate.lbl"></label>
-                    <div class="col-sm-12">
-                        <input type="text" class="form-control" name="transferdate" ng-date-object
+
+                    <!-- Transfer Date -->
+                    <div class="col-sm-4 bedtransfer-form-group">
+                        <label class="bedtransfer-label">
+                            Transfer Date & Time<span class="req">*</span>
+                        </label>
+                        <input type="text" class="form-control bedtransfer-input" name="transferdate" ng-date-object
                             datetime-picker="{{datePickerOptions.dateTimeFormat}}" datepicker-append-to-body="true"
                             placeholder="{{datePickerOptions.placeholder}}"
                             ng-click="transferdatePopup = { opened: true }" is-open="transferdatePopup.opened"
                             ng-model="item.TransferDate" required>
                     </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="comments" translate="admission.comments.lbl"></label>
-                    <div class="col-sm-12">
-                        <textarea rows="3" name="comments" ng-model="item.ReqCompletedComments" maxlength="4000"
-                            class="notes-textarea"></textarea>
+
+                    <!-- OT Transfer Toggle -->
+                    <div class="col-sm-4 bedtransfer-form-group" style="display: flex; align-items: center; margin-top: 24px;">
+                        <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #1e293b; cursor: pointer;">
+                            <input type="checkbox" name="ottransfer" ng-model="item.IsOtTransfer" style="width: 16px; height: 16px; cursor: pointer;">
+                            <span>Operation Theater (OT) Transfer</span>
+                        </label>
                     </div>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label class="col-sm-12 control-label" for="ottransfer" translate="OT Transfer"></label>
-                    <div class="col-sm-12">
-                        <input type="checkbox" name="ottransfer" class="custom-checkbox" ng-model="item.IsOtTransfer">
+
+                    <!-- Comments -->
+                    <div class="col-sm-12 bedtransfer-form-group" style="margin-bottom: 0;">
+                        <label class="bedtransfer-label">
+                            Transfer Notes / Clinical Remarks
+                        </label>
+                        <textarea rows="2" name="comments" ng-model="item.ReqCompletedComments" maxlength="4000"
+                            class="form-control" style="height: auto; border-radius: 6px; font-size: 13px;"
+                            placeholder="Enter relocation justification, doctor orders or special instructions..."></textarea>
                     </div>
                 </div>
             </fieldset>
+        </form>
+    </div>
+
+    <!-- ── Modal Footer Action Buttons ── -->
+    <div class="bedtransfer-modal-footer">
+        <div>
+            <!-- Bed Occupancy History button (enabled only when patient selected) -->
+            <button class="bedtransfer-btn-secondary" type="button" ng-click="occupancy()" ng-disabled="!item.PatientId"
+                title="{{!item.PatientId ? 'Select patient to view occupancy history' : 'View Patient Bed Occupancy History'}}">
+                <i class="fa fa-history" style="color: #0284c7;"></i>
+                <span>Bed Occupancy History</span>
+            </button>
         </div>
-        <div class="">
-            <div class="row">
-                <div class="pull-left">
-                    <button class="draftbutton" type="button" uib-tooltip="Bed Occupancy History"
-                        tooltip-placement="top" ng-click="occupancy()" translate="BedOccupancy">
-                        </i>
-                    </button>
-                </div>
-                <div class="pull-right">
-                    <button id="btnClearForm" type="button" class="draftbutton" ng-if="item.RequestedStatusId!=3"
-                        ng-click="Savecomplete()" translate="bedtransfertab.Transfer.lbl"></button>
-                </div>
-            </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="bedtransfer-btn-secondary" type="button" ng-click="cancelCallback()">
+                Cancel
+            </button>
+
+            <!-- Transfer Button (enabled only when patient selected) -->
+            <button id="btnClearForm" type="button" class="bedtransfer-btn-primary"
+                ng-if="item.RequestedStatusId!=3" ng-click="Savecomplete()" ng-disabled="!item.PatientId"
+                title="{{!item.PatientId ? 'Select patient to enable transfer' : 'Confirm Bed Relocation'}}">
+                <i class="fa fa-check"></i>
+                <span>Transfer Patient</span>
+            </button>
         </div>
-    </form>
+    </div>
 </div>

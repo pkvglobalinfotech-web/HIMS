@@ -83,94 +83,60 @@
 
         $scope.handleEvents = function (actionType, entity) {
             if (actionType == 'filerequest') {
-                // utl.Session.setEMRPatientId(entity.PatientId);
                 $state.go('app.ipmrdfilerequestapproveform', {
                     id: entity.Id,
                 });
-            }
-        }
-
-
-
-        //React bridge: renders this screen's status filter through the shared
-        //BridgeLookupSelectScreen and its <custom-table config="vm.gridConfig">
-        //through the shared BridgeGridScreen. Cell text is formatted here with
-        //the same $filter('date', ...) calls the original cellTemplates used,
-        //so no formatting logic moves into React. Every dispatch lands back on
-        //this controller's existing, unchanged functions.
-            function patientNameAge(p) {
-                if (!p) { return ''; }
-                var title = p.Title && p.Title.Description ? p.Title.Description : '';
-                return (title + (p.FirstName || '') + (p.LastName || '') + ' / ' + (p.Age || '')).trim();
-            }
-            function userLabel(u) {
-                if (!u) { return ''; }
-                return ((u.Title && u.Title.Description ? u.Title.Description + ' ' : '') + (u.FirstName || '') + ' ' + (u.LastName || '')).trim();
-            }
-
-        $scope.handleGridAction = function (actionType, payload) {
-            var items = vm.gridConfig.data || [];
-            var entity = null;
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].Id === payload.id) { entity = items[i]; break; }
-            }
-            if (actionType == 'rowAction') {
-                $scope.handleEvents('filerequest', entity);
-            } else if (actionType == 'cellAction') {
-                $scope.handleEvents('patientinfo', entity);
+            } else if (actionType == 'patientinfo') {
+                var pid = entity && (entity.PatientId || (entity.Patient && entity.Patient.Id));
+                if (pid) {
+                    utl.Modal.open('registration.patientprofile', {
+                        params: {
+                            pid: pid
+                        },
+                        confirmCallback: $scope.getList
+                    });
+                }
             }
         };
 
-        $scope.handleFilterAction = function (actionType, payload) {
-            if (actionType == 'change') {
-                $scope.currentfilter.MRDIPFileStatusId = payload.id;
+        $scope.handleReactAction = function (actionType, payload) {
+            if (actionType === 'filerequest') {
+                var entity = (payload && (payload.entity || payload)) || null;
+                if (entity) {
+                    $scope.handleEvents('filerequest', entity);
+                }
+            } else if (actionType === 'patientinfo') {
+                var entity = (payload && (payload.entity || payload)) || null;
+                if (entity) {
+                    $scope.handleEvents('patientinfo', entity);
+                }
+            } else if (actionType === 'filterChange') {
+                if (payload && payload.field) {
+                    $scope.currentfilter[payload.field] = payload.value;
+                }
+            } else if (actionType === 'search') {
+                vm.gridConfig.pagerObj.currentPage = 1;
                 $scope.getList();
+            } else if (actionType === 'pageChange') {
+                if (payload && payload.page) {
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                }
             }
         };
 
         $scope.refreshReactProps = function () {
-            var defs = vm.gridConfig.columnDefs || [];
-            function hdr(i) { return defs[i] ? defs[i].displayName : ''; }
-            var items = vm.gridConfig.data || [];
-            $scope.reactPropsGridContainer = {
-                reactProps: {
-                    columns: [
-                    { key: '__sno', header: hdr(0), width: '60px' },
-                    { key: 'requestdate', header: hdr(1), sortable: true },
-                    { key: 'visitno', header: hdr(2), sortable: true },
-                    { key: 'mrn', header: hdr(3), sortable: true },
-                    { key: 'patient', header: hdr(4), link: true },
-                    { key: 'requestuser', header: hdr(5) },
-                    { key: 'doctorname', header: hdr(6), sortable: true },
-                    { key: 'status', header: hdr(7), sortable: true }
-                ],
-                    actionsHeader: defs.length ? defs[defs.length - 1].displayName : 'Actions',
-                    hasActions: true,
-                    rows: items.map(function (entity) {
-                        return {
-                            id: entity.Id,
-                            actionLabel: 'Approve',
-                            cells: {
-                        requestdate: (entity.RequestDate ? $filter('date')(entity.RequestDate, 'dd-MMM-yyyy') : '') + ' ' + (entity.RequestDate ? $filter('date')(entity.RequestDate, 'HH:mm') : ''),
-                        visitno: entity.VisitNo,
-                        mrn: entity.Patient && entity.Patient.MRN,
-                        patient: patientNameAge(entity.Patient),
-                        requestuser: userLabel(entity.RequestUser),
-                        doctorname: entity.DoctorName,
-                        status: entity.MRDIPFileStatus && entity.MRDIPFileStatus.Description
-                    }
-                        };
-                    })
-                },
-                onAction: $scope.handleGridAction
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter || {},
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
             };
-            $scope.reactPropsFilterContainer = {
-                reactProps: {
-                    options: ($scope.lookup && $scope.lookup.MRDIPFileStatus) || [],
-                    value: $scope.currentfilter.MRDIPFileStatusId
-                },
-                onAction: $scope.handleFilterAction
-            };
+            $scope.$applyAsync();
         };
 
         vm.gridConfig = {
@@ -303,8 +269,9 @@
 
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getList();
-        }
+        };
 
         $scope.initLookup = function () {
             var inputData = [

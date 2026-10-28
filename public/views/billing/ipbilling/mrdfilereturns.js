@@ -222,73 +222,55 @@
                 return (ward + ' / ' + room + ' / ' + bed);
             }
 
-        $scope.handleGridAction = function (actionType, payload) {
-            var items = vm.gridConfig.data || [];
-            var entity = null;
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].Id === payload.id) { entity = items[i]; break; }
-            }
-            if (actionType == 'rowAction') {
-                $scope.handleEvents('return', entity);
-            } else if (actionType == 'cellAction') {
-                $scope.handleEvents(payload.key == 'patient' ? 'patientinfo' : 'patientinfo', entity);
-            }
-        };
-
-        $scope.handleFilterAction = function (actionType, payload) {
-            if (actionType == 'change') {
-                $scope.currentfilter.DoctorId = payload.id;
-                $scope.getList();
+        $scope.reactProps = {
+            items: (vm.gridConfig && vm.gridConfig.data) || [],
+            lookup: $scope.lookup || {},
+            currentfilter: $scope.currentfilter,
+            pager: {
+                totalItems: (vm.gridConfig && vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.totalItems) || 0,
+                currentPage: (vm.gridConfig && vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.currentPage) || 1,
+                pageSize: (vm.gridConfig && vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.pageSize) || 25
             }
         };
 
         $scope.refreshReactProps = function () {
-            var defs = vm.gridConfig.columnDefs || [];
-            function hdr(i) { return defs[i] ? defs[i].displayName : ''; }
-            var items = vm.gridConfig.data || [];
-            $scope.reactPropsGridContainer = {
-                reactProps: {
-                    columns: [
-                    { key: '__sno', header: hdr(0), width: '60px' },
-                    { key: 'admissiondate', header: hdr(1), sortable: true },
-                    { key: 'visitno', header: hdr(2), sortable: true },
-                    { key: 'mrn', header: hdr(3), sortable: true },
-                    { key: 'patient', header: hdr(4), link: true },
-                    { key: 'roomdetails', header: hdr(5) },
-                    { key: 'doctor', header: hdr(6), link: true },
-                    { key: 'guarantor', header: hdr(7), sortable: true },
-                    { key: 'status', header: hdr(8), sortable: true }
-                ],
-                    actionsHeader: defs.length ? defs[defs.length - 1].displayName : 'Actions',
-                    hasActions: true,
-                    highlightStyle: { background: '#ed143dad', color: '#fff' },
-                    rows: items.map(function (entity) {
-                        return {
-                            id: entity.Id,
-                            actionLabel: 'Send to MRD',
-                            highlight: !!entity.IsIncompleteMRD,
-                            cells: {
-                        admissiondate: (entity.AdmissionDate ? $filter('date')(entity.AdmissionDate, 'dd-MMM-yyyy') : '') + ' ' + (entity.AdmissionDate ? $filter('date')(entity.AdmissionDate, 'HH:mm') : ''),
-                        visitno: entity.VisitIdentifier,
-                        mrn: entity.Patient && entity.Patient.MRN,
-                        patient: patientNameGender(entity.Patient),
-                        roomdetails: roomLabel(entity),
-                        doctor: userLabel(entity.Doctor),
-                        guarantor: entity.Guarantor && entity.Guarantor.GuarantorName,
-                        status: entity.AdmissionStatus && entity.AdmissionStatus.Description
-                    }
-                        };
-                    })
-                },
-                onAction: $scope.handleGridAction
+            $scope.reactProps = {
+                items: (vm.gridConfig && vm.gridConfig.data) || [],
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter,
+                pager: {
+                    totalItems: (vm.gridConfig && vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.totalItems) || 0,
+                    currentPage: (vm.gridConfig && vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.currentPage) || 1,
+                    pageSize: (vm.gridConfig && vm.gridConfig.pagerObj && vm.gridConfig.pagerObj.pageSize) || 25
+                }
             };
-            $scope.reactPropsFilterContainer = {
-                reactProps: {
-                    options: ($scope.lookup && $scope.lookup.Doctor) || [],
-                    value: $scope.currentfilter.DoctorId
-                },
-                onAction: $scope.handleFilterAction
-            };
+            $scope.$applyAsync();
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            payload = payload || {};
+            switch (actionName) {
+                case 'filterChange':
+                    $scope.currentfilter[payload.field] = payload.value;
+                    $scope.refreshReactProps();
+                    return;
+                case 'search':
+                    $scope.getList();
+                    return;
+                case 'pageChange':
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                    return;
+                case 'return':
+                    $scope.handleEvents('return', payload.entity);
+                    return;
+                case 'patientinfo':
+                    $scope.handleEvents('patientinfo', payload.entity);
+                    return;
+            }
+            if (typeof $scope[actionName] === 'function') {
+                $scope[actionName]();
+            }
         };
 
         vm.gridConfig = {
@@ -432,6 +414,7 @@
             var clinicalid = utl.Lookup.getDefault($scope.lookup.AdmissionStatus, 'Clinical Discharge');
             var financialid = utl.Lookup.getDefault($scope.lookup.AdmissionStatus, 'Financial Discharge');
             $scope.currentfilter.admissionstatusid = admitid + ',' + fitforid + ',' + clinicalid + ',' + financialid;
+            $scope.refreshReactProps();
             $scope.getList();
         }
 

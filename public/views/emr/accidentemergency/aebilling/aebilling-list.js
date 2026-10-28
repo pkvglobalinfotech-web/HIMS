@@ -4088,6 +4088,9 @@
             $scope.getUserBills();
             $scope.getPatientAlertsCount();
             loadData();
+            if ($scope.refreshReactProps) {
+                $scope.refreshReactProps();
+            }
         };
 
         $scope.initLookup = function () {
@@ -4208,6 +4211,138 @@
                 $scope.item.WithHeader = false;
             }
         };
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                item: $scope.item,
+                selectedPatient: $scope.selectedPatient,
+                PatientBillDetails: $scope.PatientBillDetails,
+                currentcontext: $scope.currentcontext,
+                currentfilter: $scope.currentfilter,
+                lookup: $scope.lookup,
+                PaymentInfoDetails: $scope.PaymentInfoDetails,
+                canShowSaveBtn: $scope.canShowSaveBtn !== false,
+                canShowSaveapproveBtn: $scope.canShowSaveapproveBtn !== false,
+                canShowCancelBtn: $scope.canShowCancelBtn,
+                CanDelete: $scope.CanDelete,
+                HidePrintBtn: $scope.HidePrintBtn,
+                Context: vm.Context || $scope.Context,
+                PatientPendingOrdersCount: $scope.item ? $scope.item.PatientPendingOrdersCount : 0,
+                PendingBillsCount: $scope.item ? $scope.item.Count : 0,
+                ShowVAT: $scope.ShowVAT
+            };
+            if (!$scope.$$phase) {
+                $scope.$applyAsync();
+            }
+        };
+
+        // Two-way watch synchronization for React component
+        $scope.$watchCollection('PatientBillDetails', function () {
+            if ($scope.refreshReactProps) $scope.refreshReactProps();
+        });
+        $scope.$watch('currentcontext.TotNetAmount', function () {
+            if ($scope.refreshReactProps) $scope.refreshReactProps();
+        });
+        $scope.$watch('selectedPatient', function () {
+            if ($scope.refreshReactProps) $scope.refreshReactProps();
+        });
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'saveAndApprove') {
+                $scope.completeBill($scope.saveAndApprove);
+            } else if (actionName === 'saveDraft') {
+                $scope.completeBill($scope.saveDraft);
+            } else if (actionName === 'addNewBill') {
+                $scope.addNewBill();
+            } else if (actionName === 'findBill') {
+                $scope.findBill();
+            } else if (actionName === 'outstandingBill') {
+                $scope.outstandingBill();
+            } else if (actionName === 'getIPBillList') {
+                $scope.getIPBillList();
+            } else if (actionName === 'pendingOrder') {
+                $scope.pendingOrder();
+            } else if (actionName === 'pendingBill') {
+                $scope.pendingBill();
+            } else if (actionName === 'saveCancelled') {
+                $scope.saveCancelled();
+            } else if (actionName === 'deleteBill') {
+                $scope.DeleteCompleteBill();
+            } else if (actionName === 'print') {
+                $scope.print(true);
+            } else if (actionName === 'printWithoutHeader') {
+                $scope.printwithoutheader();
+            } else if (actionName === 'adjustAgainstAdvance') {
+                $scope.AdjustAgainstAdvance();
+            } else if (actionName === 'doctorChange' && payload) {
+                $scope.item.DoctorId = payload.DoctorId;
+                $scope.currentfilter.DoctorId = payload.DoctorId;
+                var foundDoc = ($scope.lookup && $scope.lookup.Doctor || []).find(function (d) { return d.Id == payload.DoctorId; });
+                if (foundDoc) {
+                    $scope.onDoctorSelected(foundDoc);
+                }
+                $scope.refreshReactProps();
+            } else if (actionName === 'payerTypeChange' && payload) {
+                $scope.currentfilter.GuarantorTypeId = payload.GuarantorTypeId;
+                $scope.getInsurancelookup();
+                $scope.refreshReactProps();
+            } else if (actionName === 'guarantorChange' && payload) {
+                $scope.currentfilter.GuarantorId = payload.GuarantorId;
+                var foundG = ($scope.lookup && $scope.lookup.Guarantor || []).find(function (g) { return g.Id == payload.GuarantorId; });
+                if (foundG) {
+                    $scope.GuarantorChange(foundG);
+                }
+                $scope.refreshReactProps();
+            } else if (actionName === 'rateCategoryChange' && payload) {
+                $scope.currentfilter.ServiceRateCategoryId = payload.ServiceRateCategoryId;
+                var foundRC = ($scope.lookup && $scope.lookup.ServiceRateCategory || []).find(function (rc) { return rc.Id == payload.ServiceRateCategoryId; });
+                if (foundRC) {
+                    $scope.ServiceRateCatChange(foundRC);
+                }
+                $scope.refreshReactProps();
+            } else if (actionName === 'discountModeChange' && payload) {
+                $scope.currentfilter.DiscountModeId = payload.DiscountModeId;
+                $scope.DiscountModechange();
+                $scope.refreshReactProps();
+            } else if (actionName === 'paymentTypeChange' && payload) {
+                $scope.currentcontext.PaymentTypeId = payload.PaymentTypeId;
+                $scope.CalculateNetAmt();
+                $scope.refreshReactProps();
+            } else if (actionName === 'fieldChange' && payload) {
+                if (payload.field) {
+                    $scope.item[payload.field] = payload.value;
+                }
+                if (payload.contextField) {
+                    $scope.currentcontext[payload.contextField] = payload.value;
+                    if (payload.contextField === 'BillDiscount' || payload.contextField === 'ReceiptAmt' || payload.contextField === 'TenderAmount') {
+                        $scope.CalculateNetAmt();
+                    }
+                }
+                $scope.refreshReactProps();
+            } else if (actionName === 'updateBillItem' && payload) {
+                var row = $scope.PatientBillDetails[payload.index];
+                if (row) {
+                    row[payload.field] = payload.value;
+                    if ($scope.CalcualteAmt) {
+                        $scope.CalcualteAmt(row);
+                    } else {
+                        $scope.CalculateNetAmt();
+                    }
+                }
+                $scope.refreshReactProps();
+            } else if (actionName === 'removeBillItem' && payload) {
+                var rowToRemove = $scope.PatientBillDetails[payload.index];
+                if (rowToRemove) {
+                    $scope.deletePatientBillDetails(payload.index, rowToRemove);
+                }
+                $scope.refreshReactProps();
+            } else if (actionName === 'addBillItem' && payload && payload.item) {
+                $scope.PatientBillDetails.push(payload.item);
+                $scope.CalculateNetAmt();
+                $scope.refreshReactProps();
+            }
+        };
+
+        $scope.refreshReactProps();
         $scope.initLookup();
     }
 

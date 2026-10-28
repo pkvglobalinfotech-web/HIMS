@@ -550,6 +550,92 @@
             utl.Http.doAction(options);
         }
 
+        // -------------------------------------------------------------
+        // React Bridge integration for BedTransferListScreen
+        // -------------------------------------------------------------
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                items: vm.gridConfig.data || [],
+                totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                pageSize: vm.gridConfig.pagerObj.pageSize || 25,
+                currentfilter: {
+                    patientnamemrn: $scope.currentfilter.patientnamemrn,
+                    TransferDate: $scope.currentfilter.TransferDate,
+                    WardId: $scope.currentfilter.WardId,
+                    StatusId: $scope.currentfilter.StatusId,
+                    Context: $scope.Context
+                },
+                lookup: $scope.lookup || {},
+                context: $scope.Context || ''
+            };
+        };
+
+        var origGetListCallback = $scope.getListCallback;
+        $scope.getListCallback = function (scope, res, options, hasError) {
+            origGetListCallback(scope, res, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        var origLookupCallback = $scope.lookupCallback;
+        $scope.lookupCallback = function (scope, data, options, hasError) {
+            origLookupCallback(scope, data, options, hasError);
+            $scope.refreshReactProps();
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            payload = payload || {};
+            switch (actionName) {
+                case 'filterChange':
+                    if (payload.field) {
+                        $scope.currentfilter[payload.field] = payload.value;
+                    }
+                    $scope.refreshReactProps();
+                    break;
+                case 'filterChangeAndSearch':
+                    if (payload.field) {
+                        $scope.currentfilter[payload.field] = payload.value;
+                    }
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'search':
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'resetFilters':
+                    $scope.currentfilter.patientnamemrn = '';
+                    $scope.currentfilter.TransferDate = utl.Formatter.getCurrentDate();
+                    $scope.currentfilter.WardId = -1;
+                    $scope.currentfilter.StatusId = -1;
+                    vm.gridConfig.pagerObj.currentPage = 1;
+                    $scope.getList();
+                    break;
+                case 'pageChange':
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                    break;
+                case 'addNew':
+                    $scope.addNew();
+                    break;
+                case 'backToList':
+                    $scope.backtoList();
+                    break;
+                case 'view':
+                case 'edit':
+                    $scope.handleEvents('view', payload);
+                    break;
+                case 'patientinfo':
+                    $scope.handleEvents('patientinfo', payload);
+                    break;
+                case 'cancel':
+                    $scope.handleEvents('cancel', payload);
+                    break;
+                default:
+                    break;
+            }
+        };
+
         $scope.initLookup();
     }
 

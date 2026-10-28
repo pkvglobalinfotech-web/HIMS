@@ -525,28 +525,46 @@
         }
         $scope.doctorChange = function () {
             //Set selected doctor department id to appointment department id
-            var doctorObj = utl.Lookup.getObject($scope.lookup.Doctor, $scope.item.DoctorId);
-            for (var idx in $scope.lookup.Department) {
-                if ($scope.lookup.Department[idx].Id == doctorObj.DepartmentId) {
-                    if ($scope.currentcontext.selecteddept.indexOf($scope.lookup.Department[idx]) == -1) {
-                        $scope.currentcontext.selecteddept.push($scope.lookup.Department[idx]);
+            if (!$scope.currentcontext.selecteddept) {
+                $scope.currentcontext.selecteddept = [];
+            }
+            if ($scope.item.DoctorId && $scope.lookup.Doctor) {
+                var doctorObj = utl.Lookup.getObject($scope.lookup.Doctor, $scope.item.DoctorId);
+                if (doctorObj && doctorObj.DepartmentId && $scope.lookup.Department) {
+                    for (var idx in $scope.lookup.Department) {
+                        if ($scope.lookup.Department[idx] && $scope.lookup.Department[idx].Id == doctorObj.DepartmentId) {
+                            if ($scope.currentcontext.selecteddept.indexOf($scope.lookup.Department[idx]) == -1) {
+                                $scope.currentcontext.selecteddept.push($scope.lookup.Department[idx]);
+                            }
+                        }
                     }
                 }
             }
-            if ($scope.currentcontext.selecteddept && $scope.currentcontext.selecteddept.length > 0)
+            if ($scope.currentcontext.selecteddept && $scope.currentcontext.selecteddept.length > 0 && $scope.currentcontext.selecteddept[0]) {
                 $scope.item.DepartmentId = $scope.currentcontext.selecteddept[0].Id;
-
-        }
+            }
+        };
 
         $scope.getdeptCallback = function (scope, data, options, hasError) {
             $scope.item.map = data;
-            var dept = [];
-            for (var idx in data) {
-                dept.push(data[idx])
-                for (var iddx in $scope.lookup.Department) {
-                    if ($scope.lookup.Department[iddx].Id == dept[idx].DepartmentId)
-                        $scope.currentcontext.selecteddept.push($scope.lookup.Department[iddx]);
+            if (!$scope.currentcontext.selecteddept) {
+                $scope.currentcontext.selecteddept = [];
+            }
+            if (data && Array.isArray(data)) {
+                for (var idx = 0; idx < data.length; idx++) {
+                    var deptItem = data[idx];
+                    if (deptItem && $scope.lookup.Department) {
+                        for (var iddx in $scope.lookup.Department) {
+                            if ($scope.lookup.Department[iddx] && $scope.lookup.Department[iddx].Id == deptItem.DepartmentId) {
+                                if ($scope.currentcontext.selecteddept.indexOf($scope.lookup.Department[iddx]) == -1) {
+                                    $scope.currentcontext.selecteddept.push($scope.lookup.Department[iddx]);
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+            if ($scope.currentcontext.selecteddept && $scope.currentcontext.selecteddept.length > 0 && $scope.currentcontext.selecteddept[0]) {
                 $scope.item.DepartmentId = $scope.currentcontext.selecteddept[0].Id;
             }
             $scope.doctorChange();
@@ -1403,13 +1421,24 @@
         };
         //Load patient guarantors
         $scope.loadPatientGuarantorsCallback = function (scope, data, options, hasError) {
-            data.PatientGuarantor.sort(sort_by('Rank', false, parseInt));
-            $scope.lookup['PatientGuarantor'] = data.PatientGuarantor;
-            if (!$scope.item.GuarantorId) {
-                $scope.item.GuarantorId = utl.Lookup.getDefault($scope.lookup.PatientGuarantor, 'SELF');
+            if (data && data.PatientGuarantor && Array.isArray(data.PatientGuarantor)) {
+                data.PatientGuarantor.sort(sort_by('Rank', false, parseInt));
+                $scope.lookup['PatientGuarantor'] = data.PatientGuarantor;
+                if (!$scope.item.GuarantorId) {
+                    var defId = utl.Lookup.getDefault($scope.lookup.PatientGuarantor, 'SELF');
+                    if (defId && defId !== -1) {
+                        $scope.item.GuarantorId = defId;
+                    } else if (data.PatientGuarantor.length > 0 && data.PatientGuarantor[0]) {
+                        $scope.item.GuarantorId = data.PatientGuarantor[0].Id;
+                    }
+                }
+            } else {
+                $scope.lookup['PatientGuarantor'] = [];
             }
-            $scope.guarantorType($scope.item.GuarantorId);
-        }
+            if ($scope.item.GuarantorId) {
+                $scope.guarantorType($scope.item.GuarantorId);
+            }
+        };
 
         $scope.loadPatientGuarantors = function () {
             //Get only active guarantors - 2

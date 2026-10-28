@@ -60,27 +60,47 @@
             }
 
             var isPastDate = function(inputDate) {
-                inputDate = moment(inputDate).format("YYYY-MM-DD");
+                if (!inputDate) return false;
+                var m = moment(inputDate, ["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", "MM/DD/YYYY", "DD-MM-YYYY"], false);
+                if (!m.isValid()) {
+                    m = moment(inputDate);
+                }
+                if (!m.isValid()) return false;
+                var formatted = m.format("YYYY-MM-DD");
                 var currentDate = moment().format("YYYY-MM-DD");
 
-                var result = moment(inputDate).isBefore(currentDate);
+                var result = moment(formatted, "YYYY-MM-DD").isBefore(moment(currentDate, "YYYY-MM-DD"));
                 return result;
             }
 
             var isPastDateTime = function(inputDate, inputTime) {
-                inputDate = moment(inputDate).format("YYYY-MM-DD");
-                inputDate = moment(inputDate + " " + inputTime).format("YYYY-MM-DD H:mm");
-                var currentDate = moment().format("YYYY-MM-DD H:mm");
+                if (!inputDate) return false;
+                var m = moment(inputDate, ["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", "MM/DD/YYYY", "DD-MM-YYYY"], false);
+                if (!m.isValid()) {
+                    m = moment(inputDate);
+                }
+                if (!m.isValid()) return false;
+                var dateStr = m.format("YYYY-MM-DD");
+                var dateTimeStr = inputTime ? (dateStr + " " + inputTime) : dateStr;
+                var parsed = moment(dateTimeStr, inputTime ? "YYYY-MM-DD H:mm" : "YYYY-MM-DD");
+                if (!parsed.isValid()) return false;
+                var currentDate = moment();
 
-                var result = moment(inputDate).isBefore(currentDate);
+                var result = parsed.isBefore(currentDate);
                 return result;
             }
 
             var isFutureDate = function(inputDate) {
-                inputDate = moment(inputDate).format("YYYY-MM-DD");
+                if (!inputDate) return false;
+                var m = moment(inputDate, ["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", "MM/DD/YYYY", "DD-MM-YYYY"], false);
+                if (!m.isValid()) {
+                    m = moment(inputDate);
+                }
+                if (!m.isValid()) return false;
+                var formatted = m.format("YYYY-MM-DD");
                 var currentDate = moment().format("YYYY-MM-DD");
 
-                var result = moment(inputDate).isAfter(currentDate);
+                var result = moment(formatted, "YYYY-MM-DD").isAfter(moment(currentDate, "YYYY-MM-DD"));
                 return result;
             }
 

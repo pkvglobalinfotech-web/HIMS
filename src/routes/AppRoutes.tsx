@@ -6,9 +6,12 @@ import { AdminDashboardComponent } from '../react-components/AdminDashboardCompo
 import { EmrWorkspaceScreen } from '../react-components/emr-workspace/EmrWorkspaceScreen';
 import { RegisteredPatientsScreen } from '../react-components/RegisteredPatientsScreen';
 import { NewRegistrationScreen } from '../react-components/NewRegistrationScreen';
+import { PatientUpdateListScreen } from '../react-components/PatientUpdateListScreen';
 import { OpdBillScreen } from '../react-components/OpdBillScreen';
 import { OpBillingListScreen } from '../react-components/OpBillingListScreen';
 import { DirectBillingListScreen } from '../react-components/DirectBillingListScreen';
+import { PharmacySalesScreen } from '../react-components/PharmacySalesScreen';
+import { PharmacyReturnScreen } from '../react-components/PharmacyReturnScreen';
 import { PrescriptionsListScreen } from '../react-components/PrescriptionsListScreen';
 import { LabDashboardComponent } from '../react-components/LabDashboardComponent';
 import { PatientSearchScreen } from '../react-components/PatientSearchScreen';
@@ -96,6 +99,30 @@ import { RadiologyReportsScreen } from '../react-components/RadiologyReportsScre
 import { RadiologyCriticalValuesScreen } from '../react-components/RadiologyCriticalValuesScreen';
 import { VendorPaymentListScreen } from '../react-components/VendorPaymentListScreen';
 import { VendorPaymentFormScreen } from '../react-components/VendorPaymentFormScreen';
+import { AdmissionListScreen } from '../react-components/AdmissionListScreen';
+import { AdmissionRequestListScreen } from '../react-components/AdmissionRequestListScreen';
+import { BedTransferListScreen } from '../react-components/BedTransferListScreen';
+import { BedManagementGridScreen } from '../react-components/BedManagementGridScreen';
+import { AdmissionFormScreen } from '../react-components/AdmissionFormScreen';
+import { CurrentInpatientListScreen } from '../react-components/CurrentInpatientListScreen';
+import { MrdFileReturnsListScreen } from '../react-components/MrdFileReturnsListScreen';
+import { IpMrdFileRequestListScreen } from '../react-components/IpMrdFileRequestListScreen';
+import { IpMrdFileRequestApproveListScreen } from '../react-components/IpMrdFileRequestApproveListScreen';
+import { TransferredFileReturnsListScreen } from '../react-components/TransferredFileReturnsListScreen';
+import { IpClearenceListScreen } from '../react-components/IpClearenceListScreen';
+import { IpFileTransferReceiveListScreen } from '../react-components/IpFileTransferReceiveListScreen';
+import { BedReceiveListScreen } from '../react-components/BedReceiveListScreen';
+import { DischargeSummaryFormScreen } from '../react-components/DischargeSummaryFormScreen';
+import { DischargeNotesListScreen } from '../react-components/DischargeNotesListScreen';
+import { OtBedReceiveListScreen } from '../react-components/OtBedReceiveListScreen';
+import { SurgeryEntryListScreen } from '../react-components/SurgeryEntryListScreen';
+import { SurgeryDashboardScreen } from '../react-components/SurgeryDashboardScreen';
+import { SurgeryRoomMasterListScreen } from '../react-components/SurgeryRoomMasterListScreen';
+import { SurgeryScheduleCalendarScreen } from '../react-components/SurgeryScheduleCalendarScreen';
+import { SurgeryScheduleListScreen } from '../react-components/SurgeryScheduleListScreen';
+import { AePatientRegistrationScreen } from '../react-components/AePatientRegistrationScreen';
+import { AeDashboardScreen } from '../react-components/AeDashboardScreen';
+import { AeBillingScreen } from '../react-components/AeBillingScreen';
 
 const StandaloneContainerTypeRoute: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -167,7 +194,7 @@ const StandaloneSampleCollectRoute: React.FC = () => {
 
 const StandaloneLisRegistrationRoute: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
-  return <LisRegistrationScreen reactProps={{ id: id ? parseInt(id, 10) : undefined }} />;
+  return <LisRegistrationScreen reactProps={{ id: id ? parseInt(id, 10) : undefined } as any} />;
 };
 
 const StandaloneLisInterfaceRoute: React.FC = () => {
@@ -182,7 +209,7 @@ const StandaloneResultAmendmentRoute: React.FC = () => {
         currentfilter: { TestTypeId: tp ? parseInt(tp, 10) : 1, WorkOrderStatusId: 7 },
         isAmendment: true,
         context: 'amendment',
-      }}
+      } as any}
     />
   );
 };
@@ -325,6 +352,23 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
+        <Route
+          path="/patientupdate"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="registration" component={<PatientUpdateListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/patientupdate"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="registration" component={<PatientUpdateListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+
         {/* EMR Clinical Workstation */}
         <Route
           path="/emr"
@@ -391,6 +435,54 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <ShellWrapper activeTab="billing" component={<DirectBillingListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pharmacy-sales"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<PharmacySalesScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pharmacy-sales/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<PharmacySalesScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/pharmacy-sales/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<PharmacySalesScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pharmacy-return"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<PharmacyReturnScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pharmacy-return/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<PharmacyReturnScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/pharmacy-return/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<PharmacyReturnScreen />} />
             </ProtectedRoute>
           }
         />
@@ -2014,6 +2106,546 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <ShellWrapper activeTab="emr" component={<NoteTemplatesListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        {/* IP Management (Inpatient) Routes */}
+        <Route
+          path="/admissions"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/admissions"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inpatient/admissions"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admissionrequests"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionRequestListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admissionrequest"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionRequestListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/admissionrequests"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionRequestListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/admissionrequest"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionRequestListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/currentinpatients"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<CurrentInpatientListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/currentinpatients"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<CurrentInpatientListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/mrdfilereturns"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<MrdFileReturnsListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mrdfilereturns"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<MrdFileReturnsListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/ipmrdfilerequest"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpMrdFileRequestListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ipmrdfilerequest"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpMrdFileRequestListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/ipmrdfilerequestapprove"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpMrdFileRequestApproveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ipmrdfilerequestapprove"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpMrdFileRequestApproveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/transferredfilereturns"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<TransferredFileReturnsListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/transferredfilereturns"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<TransferredFileReturnsListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/ipclearence"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpClearenceListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ipclearence"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpClearenceListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/bedtransfer"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedTransferListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bedtransfer"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedTransferListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bedtransfer-list"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedTransferListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/bedtransfer-list"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedTransferListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bedmanagement"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedManagementGridScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bedmanagement/"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedManagementGridScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bedmanagement/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedManagementGridScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/bedmanagement"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedManagementGridScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/bedmanagement/"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedManagementGridScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/bedmanagement/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedManagementGridScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/ipfiletransferreceive"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpFileTransferReceiveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ipfiletransferreceive"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<IpFileTransferReceiveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/bedreceive"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedReceiveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bedreceive"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<BedReceiveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inpatient"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admissions/new"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionFormScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admissions/form/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionFormScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admissiontab/:id/admission"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<AdmissionFormScreen />} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/app/dischargesummary-form"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<DischargeSummaryFormScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/dischargesummary-form/"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<DischargeSummaryFormScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/dischargesummary-form/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<DischargeSummaryFormScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dischargesummary-form/:id"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<DischargeSummaryFormScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/dischargenotes"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<DischargeNotesListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dischargenotes"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<DischargeNotesListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/app/otbedreceive"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<OtBedReceiveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/otbedreceive"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="inpatient" component={<OtBedReceiveListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgerymanagement/surgeryentrylist"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryEntryListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appsurgerymanagement/surgeryentrylist"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryEntryListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appsurgerymanagement/surgeryentrylist/"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryEntryListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgerydashboard"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryDashboardScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgerydashboard/"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryDashboardScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/surgerydashboard"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryDashboardScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgeryroommaster"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryRoomMasterListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgeryroommaster/"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryRoomMasterListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/surgeryroommaster"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryRoomMasterListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgeryschedulecalendar"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryScheduleCalendarScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/surgeryschedulecalendar"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryScheduleCalendarScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgerymanagement/surgeryschedule"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryScheduleListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appsurgerymanagement/surgeryschedule"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryScheduleListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/surgeryschedule"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryScheduleListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/surgeryschedule"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<SurgeryScheduleListScreen />} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/app/AccidentEmergency"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<AePatientRegistrationScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/aeregistration"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<AePatientRegistrationScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/aeregistration"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<AePatientRegistrationScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/aedashboard"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<AeDashboardScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/aedashboard"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="emr" component={<AeDashboardScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/aebilling"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<AeBillingScreen />} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/aebilling"
+          element={
+            <ProtectedRoute>
+              <ShellWrapper activeTab="billing" component={<AeBillingScreen />} />
             </ProtectedRoute>
           }
         />

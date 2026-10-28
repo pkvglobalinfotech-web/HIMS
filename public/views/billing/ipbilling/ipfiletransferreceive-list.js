@@ -83,31 +83,64 @@
 
         $scope.handleEvents = function (actionType, entity) {
             if (actionType == 'filerequest') {
-                // utl.Session.setEMRPatientId(entity.PatientId);
                 $state.go('app.ipfiletransferreceiveform', {
                     id: entity.Id,
                 });
-            }
-        }
-
-        //React bridge: replaces the <ui-select> status filter and the
-        //<custom-table config="vm.gridConfig"> results grid. The initial
-        //call to refreshReactProps() is placed after vm.gridConfig is
-        //defined below (it reads vm.gridConfig.columnDefs).
-        $scope.handleListAction = function (actionType, payload) {
-            if (actionType == 'receive') {
-                var items = vm.gridConfig.data || [];
-                var entity = null;
-                for (var i = 0; i < items.length; i++) {
-                    if (items[i].Id === payload.id) { entity = items[i]; break; }
+            } else if (actionType == 'patientinfo') {
+                var pid = entity && (entity.PatientId || (entity.Patient && entity.Patient.Id));
+                if (pid) {
+                    utl.Modal.open('registration.patientprofile', {
+                        params: {
+                            pid: pid
+                        },
+                        confirmCallback: $scope.getList
+                    });
                 }
-                $scope.handleEvents('filerequest', entity);
             }
         };
 
+        $scope.handleReactAction = function (actionType, payload) {
+            var items = vm.gridConfig.data || [];
+            var entity = null;
+            var targetId = payload && (payload.id || (payload.entity && payload.entity.Id));
+            if (targetId) {
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].Id === targetId) { entity = items[i]; break; }
+                }
+            } else if (payload && payload.entity) {
+                entity = payload.entity;
+            }
+
+            if (actionType === 'receive' || actionType === 'filerequest') {
+                if (entity) {
+                    $scope.handleEvents('filerequest', entity);
+                } else if (targetId) {
+                    $state.go('app.ipfiletransferreceiveform', { id: targetId });
+                }
+            } else if (actionType === 'patientinfo') {
+                if (entity) {
+                    $scope.handleEvents('patientinfo', entity);
+                }
+            } else if (actionType === 'filterChange') {
+                if (payload && payload.field) {
+                    $scope.currentfilter[payload.field] = payload.value;
+                }
+            } else if (actionType === 'search') {
+                vm.gridConfig.pagerObj.currentPage = 1;
+                $scope.getList();
+            } else if (actionType === 'pageChange') {
+                if (payload && payload.page) {
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList();
+                }
+            }
+        };
+
+        $scope.handleListAction = $scope.handleReactAction;
         $scope.handleFilterAction = function (actionType, payload) {
             if (actionType == 'statusChange') {
                 $scope.currentfilter.MRDIPFileStatusId = payload.id;
+                vm.gridConfig.pagerObj.currentPage = 1;
                 $scope.getList();
             }
         };
@@ -123,20 +156,34 @@
                     requestTimeDisplay: entity.RequestDate ? $filter('date')(entity.RequestDate, 'HH:mm') : '',
                     visitNo: entity.VisitNo,
                     patientName: entity.PatientName,
+                    patientId: entity.PatientId || (entity.Patient && entity.Patient.Id),
                     requestUserTitle: requestUser.Title && requestUser.Title.Description,
                     requestUserFirstName: requestUser.FirstName,
                     requestUserLastName: requestUser.LastName,
                     doctorName: entity.DoctorName,
-                    statusDescription: status.Description
+                    statusDescription: status.Description,
+                    statusId: entity.MRDIPFileStatusId
                 };
             });
+
+            $scope.reactProps = {
+                items: items,
+                rows: rows,
+                lookup: $scope.lookup || {},
+                currentfilter: $scope.currentfilter || {},
+                pager: {
+                    totalItems: vm.gridConfig.pagerObj.totalItems || 0,
+                    currentPage: vm.gridConfig.pagerObj.currentPage || 1,
+                    pageSize: vm.gridConfig.pagerObj.pageSize || 25
+                }
+            };
 
             $scope.reactPropsListContainer = {
                 reactProps: {
                     headers: vm.gridConfig.columnDefs.map(function (c) { return c.displayName; }),
                     rows: rows
                 },
-                onAction: $scope.handleListAction
+                onAction: $scope.handleReactAction
             };
 
             $scope.reactPropsFilterContainer = {
@@ -146,6 +193,7 @@
                 },
                 onAction: $scope.handleFilterAction
             };
+            $scope.$applyAsync();
         };
 
 
@@ -260,8 +308,9 @@
         }
         $scope.lookupCallback = function (scope, data, options, hasError) {
             $scope.lookup = hasError ? {} : data;
+            $scope.refreshReactProps();
             $scope.getList();
-        }
+        };
 
         $scope.initLookup = function () {
             var inputData = [

@@ -20,6 +20,52 @@
 
         $scope.currentcontext.id = modalConfig.params.id;
 
+        $scope.refreshReactProps = function () {
+            $scope.reactProps = {
+                modeldata: angular.copy($scope.modeldata || {}),
+                lookup: angular.copy($scope.lookup || {}),
+                gridData: angular.copy($scope.gridData || []),
+                totalReturnAmount: $scope.currentcontext.TotalReturnAmount || 0,
+                pagerObj: angular.copy(vm.gridConfig.pagerObj || {}),
+                isLoading: Boolean($scope.isLoading)
+            };
+        };
+
+        $scope.handleReactAction = function (actionName, payload) {
+            if (actionName === 'updateFilter') {
+                if (payload && payload.field) {
+                    $scope.modeldata[payload.field] = payload.value;
+                }
+            } else if (actionName === 'setFilters') {
+                if (payload) {
+                    angular.extend($scope.modeldata, payload);
+                }
+            } else if (actionName === 'fetch') {
+                $scope.actionClick('apply');
+            } else if (actionName === 'reset') {
+                $scope.actionClick('reset');
+            } else if (actionName === 'changePage') {
+                if (payload && payload.page) {
+                    vm.gridConfig.pagerObj.currentPage = payload.page;
+                    $scope.getList(payload.page);
+                }
+            } else if (actionName === 'select') {
+                if (payload && payload.item) {
+                    $scope.handleEvents('select', payload.item);
+                }
+            } else if (actionName === 'patientinfo') {
+                if (payload && payload.patientId) {
+                    $scope.patientprofiledetails(payload.patientId);
+                }
+            } else if (actionName === 'close') {
+                if (typeof $scope.cancelCallback === 'function') {
+                    $scope.cancelCallback();
+                }
+            }
+            $scope.refreshReactProps();
+            $scope.$applyAsync();
+        };
+
         function initDynamicForm() {
             $scope.defaultdata = {
                 FromDate: utl.Formatter.getCurrentDate(),
@@ -186,17 +232,20 @@
         };
 
         $scope.getListCallback = function (scope, res, options, hasError) {
-            if (res.Data.length > 0)
+            $scope.isLoading = false;
+            if (res && res.Data && res.Data.length > 0)
                 res.Data.sort($scope.custom_sort);
-            $scope.gridData = res.Data;
+            $scope.gridData = (res && res.Data) ? res.Data : [];
             $scope.currentcontext.TotalReturnAmount = 0;
             for (var idx in $scope.gridData) {
                 var billitem = $scope.gridData[idx];
-                $scope.currentcontext.TotalReturnAmount = $scope.currentcontext.TotalReturnAmount + billitem.ReturnAmount;
+                $scope.currentcontext.TotalReturnAmount = $scope.currentcontext.TotalReturnAmount + (billitem.ReturnAmount || 0);
             }
             var items = $scope.gridData;
             vm.gridConfig.data = items;
-            vm.gridConfig.pagerObj.totalItems = res.PageContext.TotalRecords;
+            vm.gridConfig.pagerObj.totalItems = (res && res.PageContext) ? res.PageContext.TotalRecords : $scope.gridData.length;
+            $scope.refreshReactProps();
+            $scope.$applyAsync();
             $('#ReturnNumber').focus();
         };
 
@@ -214,11 +263,9 @@
         /* Pharmacy Sales Find Bills - Shortcut Keys - End */
 
         $scope.getList = function (pageNo) {
+            $scope.isLoading = true;
+            $scope.refreshReactProps();
             var OutStandingcond = $scope.modeldata.IsOutStanding ? 1 : -1;
-            if ($scope.modeldata.PatientName) {
-                $scope.modeldata.FromDate = '';
-                $scope.modeldata.ToDate = '';
-            }
             // if ($scope.modeldata.ReturnNumber || $scope.modeldata.MRN ||
             //     $scope.modeldata.MobileNo|| $scope.modeldata.PatientName) {
             //     $scope.modeldata.FromDate = null;
@@ -422,6 +469,7 @@
             $scope.lookup = hasError ? {} : data;
             initDynamicForm();
             $scope.getList();
+            $scope.refreshReactProps();
         };
 
         $scope.initLookup = function () {
